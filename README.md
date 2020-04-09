@@ -1,4 +1,4 @@
-# lessons-learned
+# the collectors edition
 A bunch of configs, examples and so on for different technologies and tools we have been using in the past. Our goal to help others get things done faster and skip a part of the learning curve.
 
 # what is in it?
