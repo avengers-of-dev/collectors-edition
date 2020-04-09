@@ -1,0 +1,110 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# Content: admin resources
+# Author: Jan Jambor, XWare GmbH
+# Author URI: https://xwr.ch
+# Date: 28.02.2020
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# # # # # # # # # # # # # # #
+# namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-admin
+---
+# # # # # # # # # # # # # # #
+# secret for azure file storage
+# echo -n 'stk8skstjj001' | base64
+# echo -n 'azurestorageaccountkey' | base64
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sec-azure-file
+  namespace: ns-admin
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: div
+    costcenter: jj
+    dr: essential
+type: Opaque
+data:
+  azurestorageaccountname: azurestorageaccountname
+  azurestorageaccountkey: azurestorageaccountkey
+---
+# # # # # # # # # # # # # # #
+# azure key vault for kubernetes
+# source: https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
+# kubectl get pods -n ns-admin
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: keyvault-flexvolume
+  name: keyvault-flexvolume
+  namespace: ns-admin
+spec:
+  selector:
+    matchLabels:
+      app: keyvault-flexvolume
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: keyvault-flexvolume
+    spec:
+      #tolerations:
+      containers:
+      - name: flexvol-driver-installer
+        image: "mcr.microsoft.com/k8s/flexvolume/keyvault-flexvolume:v0.0.16"
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 50m
+            memory: 100Mi
+          limits:
+            cpu: 50m
+            memory: 100Mi
+        env:
+          # if you have used flex before on your cluster, use same directory
+          # set TARGET_DIR env var and mount the same directory of the container
+        - name: TARGET_DIR
+          value: "/etc/kubernetes/volumeplugins"
+        volumeMounts:
+        - mountPath: "/etc/kubernetes/volumeplugins"
+          name: volplugins
+      volumes:
+      - hostPath:
+          # Modify this directory if your nodes are using a different one
+          # default kubernetes: "/usr/libexec/kubernetes/kubelet-plugins/volume/exec"
+          # google cloud kubernetes: "/home/kubernetes/flexvolume"
+          # below is Azure default
+          path: "/etc/kubernetes/volumeplugins" 
+        name: volplugins
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+---
+# # # # # # # # # # # # # # #
+# azure key vault secret
+# kubectl create secret generic kvcreds --from-literal clientid=<CLIENTID> --from-literal clientsecret=<CLIENTSECRET> --type=azure/kv -n ns-admin
+# echo -n 'clientid' | base64
+# echo -n 'clientsecret' | base64
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kvcreds
+  namespace: ns-admin
+type: azure/kv
+data:
+  clientid: clientid
+  clientsecret: clientsecret
+# ---
+# # [Required for version < v0.0.13] Assign Reader Role to the service principal for your keyvault
+# az role assignment create --role Reader --assignee <principalid> --scope /subscriptions/<subscriptionid>/resourcegroups/<resourcegroup>/providers/Microsoft.KeyVault/vaults/<keyvaultname>
+# # Assign key vault permissions to your service principal
+# az keyvault set-policy -n $KV_NAME --key-permissions get --spn <YOUR SPN CLIENT ID>
+# az keyvault set-policy -n $KV_NAME --secret-permissions get --spn <YOUR SPN CLIENT ID>
+# az keyvault set-policy -n $KV_NAME --certificate-permissions get --spn <YOUR SPN CLIENT ID>

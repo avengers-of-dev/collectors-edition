@@ -1,0 +1,493 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# Content: graylog incl. elastic search & mongodb
+# Author: Jan Jambor, XWare GmbH
+# Author URI: https://xwr.ch
+# Date: 31.03.2020
+#
+# TODO
+# - get secret from azure key vault
+# - increase elastic search nodes (error occurs right now)
+# - check readiness probes 
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# # # # # # # # # # # # # # #
+# namespace
+# we are using an existing namespace "ns-admin"
+# apiVersion: v1
+# kind: Namespace
+# metadata:
+#   name: ns-admin
+# ---
+# # # # # # # # # # # # # # #
+# Deployment elasticsearch backend
+# kubectl set image deployments/elasticsearch elasticsearch=elasticsearch:6.8.7 -n ns-admin
+# kubectl scale deployments/elasticsearch --replicas=0
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch
+  namespace: ns-admin
+  labels:
+    applicationname: graylog
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    costcenter: jj
+    dr: essential
+    io.portainer.kubernetes.application.stack: graylog
+spec:
+  replicas: 1 # having more than one crashes right now: failed to obtain node locks, tried [[/usr/share/elasticsearch/data]] with lock id [0]; maybe these locations are not writable or multiple nodes were started without increasing [node.max_local_storage_nodes] (was [1])?
+  selector:
+    matchLabels:
+      tier: back-elasticsearch
+  template:
+    metadata:
+      labels:
+        applicationname: graylog
+        tier: back-elasticsearch
+        environment: test
+        owner: jan.jambor-at-xwr.ch
+        costcenter: jj
+        dr: essential
+    spec:
+      initContainers:
+      - name: init-sysctl
+        image: busybox:1.30
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        securityContext:
+          privileged: true
+      containers:
+      - name: elasticsearch
+        image: elasticsearch:6.8.7
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9200
+          protocol: TCP
+        - containerPort: 9300
+          protocol: TCP
+        volumeMounts:
+        - name: admin-configs
+          mountPath: /usr/share/elasticsearch/data/
+          subPath: graylog-elasticsearch
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+             cpu: 500m
+             memory: 4Gi
+        # readinessProbe:
+        #   tcpSocket:
+        #     port: 9200
+        #   initialDelaySeconds: 20
+        #   periodSeconds: 30
+      volumes:
+      - name: admin-configs
+        azureFile:
+          secretName: sec-azure-file
+          shareName: shstk8skstjj001
+          readOnly: false
+---
+# # # # # # # # # # # # # # #
+# Service elasticsearch backend
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  namespace: ns-admin
+  labels:
+    applicationname: graylog
+    tier: back-elasticsearch
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    costcenter: jj
+    dr: essential
+    io.portainer.kubernetes.application.stack: graylog
+spec:
+  type: ClusterIP
+  selector:
+    tier: back-elasticsearch
+  ports:
+  - name: "9200"
+    port: 9200
+    targetPort: 9200
+  - name: "9300"
+    port: 9300
+    targetPort: 9300
+---
+# # # # # # # # # # # # # # #
+# persistant volume claim
+# MongoDB cannot handle Azure File storage -.-
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc
+  namespace: ns-admin
+  labels:
+    applicationname: graylog
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    costcenter: jj
+    dr: essential
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+# # # # # # # # # # # # # # #
+# Deployment mongodb backend
+# kubectl set image deployments/mongodb mongodb=mongo:3 -n ns-admin
+# kubectl scale deployments/mongodb --replicas=0
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  namespace: ns-admin
+  labels:
+    applicationname: graylog
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    costcenter: jj
+    dr: essential
+    io.portainer.kubernetes.application.stack: graylog
+spec:
+  replicas: 1 # as we have to use RWO volumes more than 1 replica is only possible when on the same node
+  selector:
+    matchLabels:
+      tier: back-mongodb
+  template:
+    metadata:
+      labels:
+        applicationname: graylog
+        tier: back-mongodb
+        environment: test
+        owner: jan.jambor-at-xwr.ch
+        costcenter: jj
+        dr: essential
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:3
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 27017
+          protocol: TCP
+        volumeMounts:
+          - name: mongodb
+            mountPath: /data/db/
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+             cpu: 500m
+             memory: 1Gi
+      volumes:
+        - name: mongodb
+          persistentVolumeClaim:
+            claimName: mongodb-pvc
+---
+# # # # # # # # # # # # # # #
+# Service mongodb backend
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: ns-admin
+  labels:
+    applicationname: graylog
+    tier: back-mongodb
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    costcenter: jj
+    dr: essential
+    io.portainer.kubernetes.application.stack: graylog
+spec:
+  type: ClusterIP
+  selector:
+    tier: back-mongodb
+  ports:
+  - name: "27017"
+    port: 27017
+    targetPort: 27017
+---
+# # # # # # # # # # # # # # #
+# Deployment graylog
+# kubectl set image deployments/graylog graylog=graylog/graylog:3.2.4-1 -n ns-admin
+# kubectl scale deployments/graylog --replicas=0
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: graylog
+  namespace: ns-admin
+  labels:
+    applicationname: graylog
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    costcenter: jj
+    dr: essential
+    io.portainer.kubernetes.application.stack: graylog
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: front-graylog
+  template:
+    metadata:
+      labels:
+        applicationname: graylog
+        tier: front-graylog
+        environment: test
+        owner: jan.jambor-at-xwr.ch
+        costcenter: jj
+        dr: essential
+    spec:
+      containers:
+      - name: graylog
+        image: graylog/graylog:3.2.4-1
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: GRAYLOG_PASSWORD_SECRET
+          value: 
+        - name: GRAYLOG_ROOT_PASSWORD_SHA2
+          value: 
+        - name: GRAYLOG_HTTP_EXTERNAL_URI
+          value: https://graylog.at.your.domain/
+        - name: GRAYLOG_HTTP_PUBLISH_URI
+          value: https://graylog.at.your.domain/
+        - name: GRAYLOG_ELASTICSEARCH_HOSTS
+          value: http://elasticsearch:9200
+        - name: GRAYLOG_MONGODB_URI
+          value: mongodb://mongodb:27017/graylog
+        ports:
+        - containerPort: 9000
+          protocol: TCP
+        - containerPort: 12201
+          protocol: TCP
+        volumeMounts:
+        - name: admin-configs
+          mountPath: /usr/share/graylog/data/journal
+          subPath: graylog
+        - name: keyvault
+          mountPath: /kvmnt
+          readOnly: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+             cpu: 1000m
+             memory: 4Gi
+        # readinessProbe:
+        #   tcpSocket:
+        #     port: 9200
+        #   initialDelaySeconds: 20
+        #   periodSeconds: 30
+      volumes:
+      - name: admin-configs
+        azureFile:
+          secretName: sec-azure-file
+          shareName: shstk8skstjj001
+          readOnly: false
+      - name: keyvault
+        flexVolume:
+          driver: "azure/kv"
+          secretRef:
+            name: kvcreds
+          options:
+            keyvaultname: "kv-k8s-vault"
+            keyvaultobjectnames: "GRAYLOG-ROOT-PASSWORD-SHA2;GRAYLOG-PASSWORD-SECRET"
+            keyvaultobjecttypes: "secret;secret"
+            resourcegroup: "rg-k8s-kstjj-001"
+            subscriptionid: "subscriptionid"
+            tenantid: "tenantid"
+---
+# # # # # # # # # # # # # # #
+# Service graylog
+apiVersion: v1
+kind: Service
+metadata:
+  name: graylog
+  namespace: ns-admin
+  labels:
+    applicationname: graylog
+    tier: front-graylog
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    costcenter: jj
+    dr: essential
+    io.portainer.kubernetes.application.stack: graylog
+spec:
+  type: ClusterIP
+  selector:
+    tier: front-graylog
+  ports:
+  # Graylog web interface and REST API
+  - name: "9000"
+    port: 9000
+    targetPort: 9000
+  # GELF TCP
+  - name: "12201-tcp"
+    port: 12201
+    targetPort: 12201
+    protocol: TCP
+  # GELF UPD
+  - name: "12201-udp"
+    port: 12201
+    targetPort: 12201
+    protocol: UDP
+  # Syslog TCP
+  - name: "514-tcp"
+    port: 514
+    targetPort: 514
+    protocol: TCP
+  # Syslog UPD
+  - name: "514-udp"
+    port: 514
+    targetPort: 514
+    protocol: UDP
+  # RawText TCP
+  - name: "5555"
+    port: 5555
+    targetPort: 5555
+    protocol: TCP
+---
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+# external endpoint graylog
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ir-graylog
+  namespace: ns-admin
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`graylog.at.your.domain`) #&& PathPrefix(`/test`)
+    kind: Rule
+    services:
+    - name: graylog
+      namespace: ns-admin
+      port: 9000
+  tls:
+    certResolver: myresolver
+
+---
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+# fluentd
+# https://docs.fluentd.org/how-to-guides/graylog2
+#
+# - configure GELF UDP Input (named fluentd)
+# 
+
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+# fluentd
+# https://github.com/fluent/fluentd-kubernetes-daemonset/blob/master/fluentd-daemonset-graylog-rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fluentd
+  namespace: ns-admin
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: fluentd
+  namespace: ns-admin
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: fluentd
+roleRef:
+  kind: ClusterRole
+  name: fluentd
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: fluentd
+  namespace: ns-admin
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentd
+  namespace: ns-admin
+  labels:
+    k8s-app: fluentd-logging
+    version: v1
+    io.portainer.kubernetes.application.stack: graylog
+spec:
+  selector:
+    matchLabels:
+      k8s-app: fluentd-logging
+      version: v1
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        k8s-app: fluentd-logging
+        version: v1
+    spec:
+      serviceAccount: fluentd
+      serviceAccountName: fluentd
+      # Enable tolerations if you want to run daemonset on master nodes.
+      # Recommended to disable on managed k8s.
+      # tolerations:
+      # - key: node-role.kubernetes.io/master
+      #   effect: NoSchedule
+      containers:
+      - name: fluentd
+        image: fluent/fluentd-kubernetes-daemonset:v1-debian-graylog
+        imagePullPolicy: IfNotPresent
+        env:
+          - name:  FLUENT_GRAYLOG_HOST
+            value: "graylog"
+          - name:  FLUENT_GRAYLOG_PORT
+            value: "12201"
+        resources:
+          requests:
+            cpu: 200m
+            memory: 0.5Gi
+          limits:
+            # ===========
+            # Less memory leads to child process problems.
+            cpu: 1000m
+            memory: 1Gi
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+
+# REGEX Extractors for Graylog
+# vallue:
+# \"\bcontainer_name\b\":\"(.*?)\"
+# check
+# \"\b(container_name)\b\"

@@ -1,0 +1,112 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# Content: dummy test app
+# Author: Jan Jambor, XWare GmbH
+# Author URI: https://xwr.ch
+# Date: 04.03.2020
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# # # # # # # # # # # # # # #
+# namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-testing
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: dummy-test-app
+    costcenter: jj
+    dr: essential
+---
+# # # # # # # # # # # # # # #
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dummy-test-app
+  namespace: ns-testing
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: dummy-test-app
+    costcenter: jj
+    dr: essential
+spec:
+  selector:
+    matchLabels:
+      applicationname: dummy-test-app
+  template:
+    metadata:
+      labels:
+        environment: test
+        owner: jan.jambor-at-xwr.ch
+        applicationname: dummy-test-app
+        costcenter: jj
+        dr: essential
+    spec:
+      containers:
+      - name: dummy-test-app
+        image: paulbouwer/hello-kubernetes:1.7
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources:
+          # requests:
+          #   cpu: 100m
+          #   memory: 128Mi
+          limits:
+            cpu: 100m
+            memory: 50Mi
+
+---
+# # # # # # # # # # # # # # #
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: dummy-test-app
+  namespace: ns-testing
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: dummy-test-app
+    costcenter: jj
+    dr: essential
+spec:
+  type: ClusterIP #NodePort
+  selector:
+    applicationname: dummy-test-app
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+# IngressRoute
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ir-dummy-test-app
+  namespace: ns-testing
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: dummy-test-app
+    costcenter: jj
+    dr: essential
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`dummy-test-app.at.your.domain`) # && PathPrefix(`/`)
+    kind: Rule
+    services:
+    - name: dummy-test-app
+      namespace: ns-testing
+      port: 8080
+  tls:
+    certResolver: myresolver
