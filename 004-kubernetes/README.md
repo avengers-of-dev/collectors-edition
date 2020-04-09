@@ -11,9 +11,9 @@ one word also for logging: I have tested graylog because I really like it and it
 
 | # | app / tech  | description  |
 |---|---|---|
-| 00 | [basic-resources](00-basic-resources.yml) | some basic resources you will need like access to file storage and key vault|
-| 10 | [portainer-kubernetes](10-portainer-kubernetes.yml) | portainer as a graphical interface |
-| 00 | [traefic-kubernetes](11-traefic-kubernetes.yml) | traefik reverse prox incl. let's encrypt |
-| 00 | [owntracks-kubernetes](20-owntracks-mosquitto-kubernetes.yml) | test of running a own tracks backend |
-| 00 | [graylog-kubernetes](21-graylog-kubernetes.yml) | consolidating all logs from a cluster. Take care of the amount of data and your cloud costs! |
-| 00 | [dummy-test-app](99-dummy-test-app.yml) | a dummy test app displaying some infos |
+| 00 | [basic-resources](https://github.com/avengers-of-dev/collectors-edition/blob/master/004-kubernetes/00-basic-resources.yml) | some basic resources you will need like access to file storage and key vault|
+| 10 | [portainer-kubernetes](https://github.com/avengers-of-dev/collectors-edition/blob/master/004-kubernetes/10-portainer-kubernetes.yml) | portainer as a graphical interface |
+| 11 | [traefic-kubernetes](https://github.com/avengers-of-dev/collectors-edition/blob/master/004-kubernetes/11-traefic-kubernetes.yml) | traefik reverse prox incl. let's encrypt |
+| 20 | [owntracks-kubernetes](https://github.com/avengers-of-dev/collectors-edition/blob/master/004-kubernetes/20-owntracks-mosquitto-kubernetes.yml) | test of running a own tracks backend |
+| 21 | [graylog-kubernetes](https://github.com/avengers-of-dev/collectors-edition/blob/master/004-kubernetes/21-graylog-kubernetes.yml) | consolidating all logs from a cluster. Take care of the amount of data and your cloud costs! |
+| 99 | [dummy-test-app](https://github.com/avengers-of-dev/collectors-edition/blob/master/004-kubernetes/99-dummy-test-app.yaml) | a dummy test app displaying some infos |

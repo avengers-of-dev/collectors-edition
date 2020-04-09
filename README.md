@@ -8,3 +8,4 @@ A bunch of configs, examples and so on for different technologies and tools we h
 | 1 | [nginx](001-nginx) | contains best practise reverse proxy configs for multiple pages including let's encrypt |
 | 2 | [portainer](002-portainer) | portainer on docker, docker swarm and kubernetes |
 | 3 | [terraform](003-terraform) | creating MSFT azure resources with terraform |
+| 4 | [kubernetes](004-kubernetes) | a bunch of yaml files for stacks running on aks |
