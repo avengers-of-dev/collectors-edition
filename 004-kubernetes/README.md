@@ -16,4 +16,4 @@ one word also for logging: I have tested graylog because I really like it and it
 | 11 | [traefic-kubernetes](https://github.com/avengers-of-dev/collectors-edition/blob/master/004-kubernetes/11-traefic-kubernetes.yml) | traefik reverse prox incl. let's encrypt |
 | 20 | [owntracks-kubernetes](https://github.com/avengers-of-dev/collectors-edition/blob/master/004-kubernetes/20-owntracks-mosquitto-kubernetes.yml) | test of running a own tracks backend |
 | 21 | [graylog-kubernetes](https://github.com/avengers-of-dev/collectors-edition/blob/master/004-kubernetes/21-graylog-kubernetes.yml) | consolidating all logs from a cluster. Take care of the amount of data and your cloud costs! |
-| 99 | [dummy-test-app](https://github.com/avengers-of-dev/collectors-edition/blob/master/004-kubernetes/99-dummy-test-app.yaml) | a dummy test app displaying some infos |
+| 99 | [dummy-test-app](https://github.com/avengers-of-dev/collectors-edition/blob/master/004-kubernetes/99-dummy-test-app.yml) | a dummy test app displaying some infos |
