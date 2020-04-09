@@ -1,0 +1,11 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# Content: path to let's encrypt ssl ssl certificates
+# Author: Jan Jambor
+# Author URI: https://xwr.ch
+# Date: 09.03.2020
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+ssl_certificate         /etc/letsencrypt/live/{your.domain.com}/fullchain.pem;
+ssl_certificate_key     /etc/letsencrypt/live/{your.domain.com}/privkey.pem;

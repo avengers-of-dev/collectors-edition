@@ -1,0 +1,29 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# Content: docker compose for portainer
+# Author: Jan Jambor
+# Author URI: https://xwr.ch
+# Date: 07.04.2020
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+version: "3"
+
+services:
+
+  portainer:
+    hostname: portainer
+    image: portainer/portainer:1.23.2
+    deploy:
+      restart_policy:
+        condition: any
+    volumes:
+      - '/some/folder/locally/:/data/'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    networks:
+      - seicento_docker-network
+
+networks:
+  seicento_docker-network:
+    external:
+      name: seicento_docker-network

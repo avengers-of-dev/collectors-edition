@@ -1,0 +1,115 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# Content: Portainer 4 kubernetes on AKS
+# Author: Jan Jambor, XWare GmbH
+# Author URI: https://xwr.ch
+# Date: 07.04.2020
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# # # # # # # # # # # # # # #
+# ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: portainer-sa-clusteradmin
+  namespace: ns-admin
+---
+# # # # # # # # # # # # # # #
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: portainer-crb-clusteradmin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: portainer-sa-clusteradmin
+  namespace: ns-admin
+---
+# # # # # # # # # # # # # # #
+# Deployment
+# Instant update: kubectl set image deployments/portainer portainer=portainer/portainer-k8s-beta:linux-amd64 -n ns-admin
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portainer
+  namespace: ns-admin
+spec:
+  selector:
+    matchLabels:
+      app: app-portainer
+  template:
+    metadata:
+      labels:
+        app: app-portainer
+    spec:
+      serviceAccountName: portainer-sa-clusteradmin
+      containers:
+      - name: portainer
+        image: portainer/portainer-k8s-beta:linux-amd64
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9000
+          protocol: TCP
+        volumeMounts:
+        - name: admin-configs
+          mountPath: /data
+          subPath: portainer
+        resources:
+          # requests:
+          #   cpu: 100m
+          #   memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+      volumes:
+      - name: admin-configs
+        azureFile:
+          secretName: sec-azure-file
+          shareName: shstk8skstjj001
+          readOnly: false
+---
+# # # # # # # # # # # # # # #
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: portainer
+  namespace: ns-admin
+spec:
+  type: ClusterIP #NodePort
+  selector:
+    app: app-portainer
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9000
+      targetPort: 9000
+      # nodePort: 30777
+---
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+# portainer dashboard
+#
+# !!! this will only work if you have treafik running as ingress controller!
+#
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ir-portainer
+  namespace: ns-admin
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`portainer.k8s.jambor.pro`) # && PathPrefix(`/`)
+    kind: Rule
+    services:
+    - name: portainer
+      namespace: ns-admin
+      port: 9000
+  tls:
+    certResolver: myresolver

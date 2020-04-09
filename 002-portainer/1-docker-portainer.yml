@@ -1,0 +1,47 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# Content: docker compose for portainer & network
+# Author: Jan Jambor
+# Author URI: https://xwr.ch
+# Date: 07.04.2020
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+version: "2"
+
+services:
+
+  portainer:
+    container_name: portainer
+    hostname: portainer
+    image: portainer/portainer:1.23.2
+    restart: always
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - '/share/Container/portainer/_data:/data'
+    dns:
+      - 192.168.100.5
+    # please use logging with gelf only if you have a graylog instance running
+    logging:
+      driver: gelf
+      options:
+        gelf-address: 'udp://192.168.100.30:12201'
+    networks:
+      2rockLAN:
+        ipv4_address: 192.168.100.10
+
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# Quick tipp for all using docker on a QNAP NAS 
+# due to whatever a network created via the web interface of 
+# container station is behaving different than one created by 
+# docker network create. So do yourself a favor and create a 
+# dummy container in bridge mode with fixed IP and reuse the 
+# automatically created network.
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+networks:
+  2rockLAN:
+    external:
+      name: qnet-static-bond0-076754

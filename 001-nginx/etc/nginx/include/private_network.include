@@ -1,0 +1,10 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# Content: your private network IP range for internal access to e.g. nginx plus dashboard
+# Author: Jan Jambor
+# Author URI: https://xwr.ch
+# Date: 30.03.2020
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+allow 192.168.100.0/24;

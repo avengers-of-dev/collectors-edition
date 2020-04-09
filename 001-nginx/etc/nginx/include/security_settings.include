@@ -1,0 +1,45 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# Content: Security Settings
+# Author: Jan Jambor
+# Author URI: https://xwr.ch
+# Date: 30.03.2020
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# do not show the nginx version and X-Powered-By
+server_tokens off;
+fastcgi_hide_header X-Powered-By;
+proxy_hide_header X-Powered-By;
+
+# HSTS prevents attackers from tricking you into connecting via HTTP in the
+# future, but if you actually intend to access the server via non-SSL in the
+# future then you should probably delete this line.
+add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+
+# X-Frame-Options tells the browser whether you want to allow your site to be framed or not.
+# By preventing a browser from framing your site you can defend against attacks like clickjacking.
+# Recommended value: add_header X-Frame-Options "SAMEORIGIN";.
+# Other options: add_header X-Frame-Options "ALLOW-FROM https://apps.xwr.ch";
+add_header X-Frame-Options "SAMEORIGIN";
+
+# X-Content-Type-Options stops a browser from trying to MIME-sniff the content type and forces it
+# to stick with the declared content-type. This helps to reduce the danger of drive-by downloads.
+# Recommended value "X-Content-Type-Options: nosniff".
+add_header X-Content-Type-Options nosniff;
+
+# X-XSS-Protection sets the configuration for the cross-site scripting filter built into most browsers.
+# Recommended value "X-XSS-Protection: 1; mode=block".
+add_header X-XSS-Protection "1; mode=block" always;
+
+# Referrer-Policy
+# Details see https://scotthelme.co.uk/a-new-security-header-referrer-policy/
+add_header Referrer-Policy "no-referrer" always;
+
+# Feature-Policy
+# Details see https://scotthelme.co.uk/a-new-security-header-feature-policy/
+add_header Feature-Policy "geolocation none;midi none;notifications 'self';push 'self';sync-xhr 'self';microphone 'self';camera 'self';magnetometer none;gyroscope none;speaker 'self';vibrate 'self';fullscreen 'self';payment none;";
+
+# add HTTP response headers for debugging & trouble shooting
+add_header CC-X-Request-ID $request_id;
+add_header X-Cache-Status $upstream_cache_status;
