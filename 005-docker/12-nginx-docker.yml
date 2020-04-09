@@ -1,0 +1,63 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# Content: docker compose for nginx services and certbot
+# Author: Jan Jambor
+# Author URI: https://xwr.ch
+# Date: 27.03.2020
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+version: "2"
+
+services:
+
+  nginx:
+    container_name: nginx
+    hostname: nginx
+    image: nginx:1.17.9
+    restart: always
+    links:
+      - certbot:certbot
+    volumes:
+      - '/share/Container/nginx/cache/:/data/nginx/cache/'
+      - '/share/Container/nginx/etc/nginx/:/etc/nginx/'
+      - '/share/Container/nginx/log/:/var/log/nginx'
+      - '/share/Container/lets-encrypt/www/:/var/www/certbot/'
+      - '/share/Container/lets-encrypt/conf/:/etc/letsencrypt/'
+    dns: 192.168.100.5
+    logging:
+      driver: gelf
+      options:
+        gelf-address: 'udp://192.168.100.30:12201'
+    networks:
+      2rockLAN:
+        ipv4_address: 192.168.100.4
+  
+  certbot:
+    container_name: certbot
+    hostname: certbot
+    image: certbot/certbot:v1.2.0
+    restart: 'no'
+    ## command in one for staging
+    #command: 'certonly --webroot -w /var/www/certbot --staging --email your@email.com -d domain.one -d domain.two --rsa-key-size 4096 --agree-tos --expand --force-renewal'
+    ## command in one for first live after testing or to force getting new certs
+    #command: 'certonly --webroot -w /var/www/certbot --email your@email.com -d domain.one -d domain.two --rsa-key-size 4096 --agree-tos --expand --force-renewal'
+    ## command in one default
+    command: 'certonly --webroot -w /var/www/certbot --email your@email.com -d domain.one -d domain.two --rsa-key-size 4096 --agree-tos --expand'
+    entrypoint: 'certbot'
+    volumes:
+      - '/share/Container/lets-encrypt/www/:/var/www/certbot/'
+      - '/share/Container/lets-encrypt/conf/:/etc/letsencrypt/'
+    logging:
+      driver: gelf
+      options:
+        gelf-address: 'udp://192.168.100.30:12201'
+    # dns: 192.168.100.5
+    # networks:
+    #   2rockLAN:
+    #     ipv4_address: 192.168.100.20
+
+networks:
+  2rockLAN:
+    external:
+      name: qnet-static-bond0-076754
