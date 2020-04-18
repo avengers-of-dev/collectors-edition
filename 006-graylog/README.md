@@ -49,7 +49,7 @@ Enable the log type input.
     #- c:\programdata\elasticsearch\logs\*
 ```
 
-enable the logstash
+enable the logstash and add the let's encrypt root ca pem file (see: [Let’s Encrypt Authority X3](https://letsencrypt.org/certificates/))
 
 ```
 #----------------------------- Logstash output --------------------------------
@@ -57,6 +57,11 @@ output.logstash:
   # The Logstash hosts
   # hosts: ["192.168.100.30:5044"]
   hosts: ["graylog.your.domain:5044"]
+
+  # Optional SSL. By default is off.
+  # List of root certificates for HTTPS server verifications
+  ssl.certificate_authorities: ["/Users/jj/Qsync/WorkInProgress/lets-encrypt-x3-cross-signed.pem"]
+  
 ```
 
 Run the beats service on your client.
