@@ -1,27 +1,29 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
-# Content: docker compose for portainer & network
+# Content: docker compose for portainer & agent
 # Author: Jan Jambor
 # Author URI: https://xwr.ch
-# Date: 07.04.2020
+# Date: 16.04.2020
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 version: "2"
 
 services:
-
   portainer:
     container_name: portainer
     hostname: portainer
     image: portainer/portainer:1.23.2
     restart: always
+    command: -H unix:///var/run/docker.sock
+    ports:
+      - 9000:9000
+      - 8000:8000
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
       - '/share/Container/portainer/_data:/data'
     dns:
       - 192.168.100.5
-    # please use logging with gelf only if you have a graylog instance running
     logging:
       driver: gelf
       options:
@@ -29,6 +31,33 @@ services:
     networks:
       2rockLAN:
         ipv4_address: 192.168.100.10
+
+  portainer_agent:
+    container_name: portainer_agent
+    hostname: portainer_agent
+    image: portainer/agent:linux-amd64-1.5.1
+    restart: always
+    ports:
+      - 8000:8000
+    environment:
+      - EDGE=1
+      - EDGE_ID=
+      - EDGE_KEY=
+      - CAP_HOST_MANAGEMENT=1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+      - /:/host
+      # - portainer_agent_data:/data
+    dns:
+      - 192.168.100.5
+    logging:
+      driver: gelf
+      options:
+        gelf-address: 'udp://192.168.100.30:12201'
+    networks:
+      2rockLAN:
+        ipv4_address: 192.168.100.34
 
 # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
