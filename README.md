@@ -9,3 +9,8 @@ A bunch of configs, examples and so on for different technologies and tools we h
 | 2 | [portainer](002-portainer) | portainer on docker, docker swarm and kubernetes |
 | 3 | [terraform](003-terraform) | creating MSFT azure resources with terraform |
 | 4 | [kubernetes](004-kubernetes) | a bunch of yaml files for stacks running on aks |
+
+# overview
+Many of the components are used in a kubernetes cluster designed as shown in the picture below.
+
+![architecture overview](999-documentation/architecture.png)
