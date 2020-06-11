@@ -1,0 +1,115 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# Content: keycloak 4 kubernetes on AKS
+# Author: Jan Jambor, XWare GmbH
+# Author URI: https://xwr.ch
+# Date: 11.06.2020
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# # # # # # # # # # # # # # #
+# Deployment
+# Instant update: kubectl set image deployments/keycloak keycloak=quay.io/keycloak/keycloak:10.0.2 -n ns-admin
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: ns-admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-keycloak
+  template:
+    metadata:
+      labels:
+        app: app-keycloak
+    spec:
+      containers:
+      - name: portainer
+        image: quay.io/keycloak/keycloak:10.0.2
+        imagePullPolicy: Always
+        env:
+        - name: KEYCLOAK_USER
+          value: "admin"
+        - name: KEYCLOAK_PASSWORD
+          value: "admin"
+        - name: PROXY_ADDRESS_FORWARDING
+          value: "true"
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: https
+          containerPort: 8443
+        volumeMounts:
+        - name: admin-configs
+          mountPath: /data
+          subPath: keycloak
+        readinessProbe:
+          httpGet:
+            path: /auth/realms/master
+            port: 8080
+        resources:
+          # requests:
+          #   cpu: 100m
+          #   memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+      volumes:
+      - name: admin-configs
+        azureFile:
+          secretName: sec-azure-file
+          shareName: shstk8skstjj001
+          readOnly: false
+      - name: keyvault
+        flexVolume:
+          driver: "azure/kv"
+          secretRef:
+            name: kvcreds
+          options:
+            keyvaultname: "kv-k8s-vault"
+            keyvaultobjectnames: "GRAYLOG-ROOT-PASSWORD-SHA2;GRAYLOG-PASSWORD-SECRET"
+            keyvaultobjecttypes: "secret;secret"
+            resourcegroup: "rg-k8s-kstjj-001"
+            subscriptionid: "subscriptionid"
+            tenantid: "tenantid"
+
+---
+# # # # # # # # # # # # # # #
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: portainer
+  namespace: ns-admin
+spec:
+  type: ClusterIP #NodePort
+  selector:
+    app: app-portainer
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9000
+      targetPort: 9000
+      # nodePort: 30777
+---
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+# portainer dashboard
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ir-portainer
+  namespace: ns-admin
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`portainer.at.your.domain`) # && PathPrefix(`/`)
+    kind: Rule
+    services:
+    - name: portainer
+      namespace: ns-admin
+      port: 9000
+  tls:
+    certResolver: myresolver
