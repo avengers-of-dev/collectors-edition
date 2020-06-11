@@ -9,6 +9,7 @@
 
 # # # # # # # # # # # # # # #
 # namespace
+# kubectl config set-context --current --namespace=ns-admin
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -36,6 +37,10 @@ data:
 ---
 # # # # # # # # # # # # # # #
 # azure key vault for kubernetes
+#
+# This solution has been deprecated; still used by:
+# - graylog
+#
 # source: https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 # kubectl get pods -n ns-admin
 apiVersion: apps/v1
@@ -89,6 +94,10 @@ spec:
 ---
 # # # # # # # # # # # # # # #
 # azure key vault secret
+#
+# This solution has been deprecated; still used by:
+# - graylog
+#
 # kubectl create secret generic kvcreds --from-literal clientid=<CLIENTID> --from-literal clientsecret=<CLIENTSECRET> --type=azure/kv -n ns-admin
 # echo -n 'clientid' | base64
 # echo -n 'clientsecret' | base64
@@ -108,3 +117,370 @@ data:
 # az keyvault set-policy -n $KV_NAME --key-permissions get --spn <YOUR SPN CLIENT ID>
 # az keyvault set-policy -n $KV_NAME --secret-permissions get --spn <YOUR SPN CLIENT ID>
 # az keyvault set-policy -n $KV_NAME --certificate-permissions get --spn <YOUR SPN CLIENT ID>
+---
+# # # # # # # # # # # # # # #
+# Kubernetes-Secrets-Store-CSI-Driver
+# URL: https://github.com/kubernetes-sigs/secrets-store-csi-driver#usage
+#
+# Step 1
+# kubectl apply -f deploy/rbac-secretproviderclass.yaml # update the namespace of the secrets-store-csi-driver ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: secrets-store-csi-driver
+  namespace: ns-admin
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: secretproviderclasses-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: secretproviderclasses-role
+subjects:
+- kind: ServiceAccount
+  name: secrets-store-csi-driver
+  namespace: ns-admin
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: secretproviderclasses-role
+rules:
+- apiGroups:
+  - secrets-store.csi.x-k8s.io
+  resources:
+  - secretproviderclasses
+  verbs:
+  - get
+  - list
+  - update
+- apiGroups:
+  - secrets-store.csi.x-k8s.io
+  resources:
+  - secretproviderclasses/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - update
+---
+# Step 2
+# kubectl apply -f deploy/csidriver.yaml
+apiVersion: storage.k8s.io/v1beta1
+kind: CSIDriver
+metadata:
+  name: secrets-store.csi.k8s.io
+spec:
+  podInfoOnMount: true
+  attachRequired: false
+  volumeLifecycleModes:
+  - Ephemeral
+---
+# Step 3
+# kubectl apply -f deploy/secrets-store.csi.x-k8s.io_secretproviderclasses.yaml
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.4
+  creationTimestamp: null
+  name: secretproviderclasses.secrets-store.csi.x-k8s.io
+spec:
+  group: secrets-store.csi.x-k8s.io
+  names:
+    kind: SecretProviderClass
+    listKind: SecretProviderClassList
+    plural: secretproviderclasses
+    singular: secretproviderclass
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: SecretProviderClass is the Schema for the secretproviderclasses
+        API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: SecretProviderClassSpec defines the desired state of SecretProviderClass
+          properties:
+            parameters:
+              additionalProperties:
+                type: string
+              description: Configuration for specific provider
+              type: object
+            provider:
+              description: Configuration for provider name
+              type: string
+            secretObjects:
+              items:
+                description: SecretObject defines the desired state of synced K8s
+                  secret objects
+                properties:
+                  data:
+                    items:
+                      description: SecretObjectData defines the desired state of synced
+                        K8s secret object data
+                      properties:
+                        key:
+                          description: data field to populate
+                          type: string
+                        objectName:
+                          description: name of the object to sync
+                          type: string
+                      type: object
+                    type: array
+                  secretName:
+                    description: name of the K8s secret object
+                    type: string
+                  type:
+                    description: type of K8s secret object
+                    type: string
+                type: object
+              type: array
+          type: object
+        status:
+          description: SecretProviderClassStatus defines the observed state of SecretProviderClass
+          properties:
+            byPod:
+              items:
+                description: ByPodStatus defines the state of SecretProviderClass
+                  as seen by an individual controller
+                properties:
+                  id:
+                    description: id of the pod that wrote the status
+                    type: string
+                  namespace:
+                    description: namespace of the pod that wrote the status
+                    type: string
+                type: object
+              type: array
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+# Step 4
+# kubectl apply -f deploy/secrets-store-csi-driver.yaml --namespace $NAMESPACE
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: csi-secrets-store
+spec:
+  selector:
+    matchLabels:
+      app: csi-secrets-store
+  template:
+    metadata:
+      labels:
+        app: csi-secrets-store
+    spec:
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+      serviceAccountName: secrets-store-csi-driver
+      hostNetwork: true
+      containers:
+        - name: node-driver-registrar
+          image: quay.io/k8scsi/csi-node-driver-registrar:v1.2.0
+          args:
+            - --v=5
+            - --csi-address=/csi/csi.sock
+            - --kubelet-registration-path=/var/lib/kubelet/plugins/csi-secrets-store/csi.sock
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  [
+                    "/bin/sh",
+                    "-c",
+                    "rm -rf /registration/secrets-store.csi.k8s.io-reg.sock",
+                  ]
+          env:
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+            - name: registration-dir
+              mountPath: /registration
+        - name: secrets-store
+          image: docker.io/deislabs/secrets-store-csi:v0.0.11
+          args:
+            - "--debug=true"
+            - "--endpoint=$(CSI_ENDPOINT)"
+            - "--nodeid=$(KUBE_NODE_NAME)"
+            - "--provider-volume=/etc/kubernetes/secrets-store-csi-providers"
+          env:
+            - name: CSI_ENDPOINT
+              value: unix:///csi/csi.sock
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true
+          ports:
+            - containerPort: 9808
+              name: healthz
+              protocol: TCP
+          livenessProbe:
+              failureThreshold: 5
+              httpGet:
+                path: /healthz
+                port: healthz
+              initialDelaySeconds: 30
+              timeoutSeconds: 10
+              periodSeconds: 15
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+            - name: mountpoint-dir
+              mountPath: /var/lib/kubelet/pods
+              mountPropagation: Bidirectional
+            - name: providers-dir
+              mountPath: /etc/kubernetes/secrets-store-csi-providers
+        - name: liveness-probe
+          image: quay.io/k8scsi/livenessprobe:v1.1.0
+          imagePullPolicy: Always
+          args:
+          - --csi-address=/csi/csi.sock
+          - --probe-timeout=3s
+          - --health-port=9808
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+      volumes:
+        - name: mountpoint-dir
+          hostPath:
+            path: /var/lib/kubelet/pods
+            type: DirectoryOrCreate
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry/
+            type: Directory
+        - name: plugin-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/csi-secrets-store/
+            type: DirectoryOrCreate
+        - name: providers-dir
+          hostPath:
+            path: /etc/kubernetes/secrets-store-csi-providers
+            type: DirectoryOrCreate
+---
+# # # # # # # # # # # # # # #
+# csi-secrets-store-provider-azure
+# URL: https://github.com/Azure/secrets-store-csi-driver-provider-azure/blob/master/docs/install-yamls.md
+#
+# Install the Azure Key Vault Provider
+# kubectl apply -f https://raw.githubusercontent.com/Azure/secrets-store-csi-driver-provider-azure/master/deployment/provider-azure-installer.yaml
+# To validate the provider's installer is running as expected, run the following commands:
+# kubectl get pods -l app=csi-secrets-store-provider-azure
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: csi-secrets-store-provider-azure
+  name: csi-secrets-store-provider-azure
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: csi-secrets-store-provider-azure
+  template:
+    metadata:
+      labels:
+        app: csi-secrets-store-provider-azure
+    spec:
+      containers:
+        - name: provider-azure-installer
+          image: mcr.microsoft.com/k8s/csi/secrets-store/provider-azure:0.0.6
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: 50m
+              memory: 100Mi
+            limits:
+              cpu: 50m
+              memory: 100Mi
+          env:
+            - name: TARGET_DIR
+              value: "/etc/kubernetes/secrets-store-csi-providers"
+          volumeMounts:
+            - mountPath: "/etc/kubernetes/secrets-store-csi-providers"
+              name: providervol
+      volumes:
+        - name: providervol
+          hostPath:
+            path: "/etc/kubernetes/secrets-store-csi-providers"
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+
+# ---
+# # # # # # # # # # # # # # # #
+# # Azure Key Vault Provider for Secrets Store CSI Driver
+# # URL: https://github.com/Azure/secrets-store-csi-driver-provider-azure
+
+# ---
+# # # # # # # # # # # # # # # #
+# # azure key vault for kubernetes
+# #
+# apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+# kind: SecretProviderClass
+# metadata:
+#   name: azure-kvname
+#   namespace: ns-admin
+# spec:
+#   provider: azure
+#   parameters:
+#     usePodIdentity: "false"         # [OPTIONAL] if not provided, will default to "false"
+#     keyvaultName: "kv-k8s-vault"          # the name of the KeyVault
+#     cloudName: ""          # [OPTIONAL for Azure] if not provided, azure environment will default to AzurePublicCloud 
+#     objects:  |
+#       array:
+#         - |
+#           objectName: secret1
+#           objectType: secret        # object types: secret, key or cert
+#           objectVersion: ""         # [OPTIONAL] object versions, default to latest if empty
+#         - |
+#           objectName: key1
+#           objectType: key
+#           objectVersion: ""
+#     resourceGroup: "rg-k8s-kstjj-001"                                 # [REQUIRED for version < 0.0.4] the resource group of the KeyVault
+#     subscriptionId: "d9d8152f-7962-4dc6-a6eb-bcad103bda4a"            # [REQUIRED for version < 0.0.4] the subscription ID of the KeyVault
+#     tenantId: "5b023340-9914-41fc-a387-5d3a12615797"                  # the tenant ID of the KeyVault  
+
