@@ -31,6 +31,29 @@ subjects:
   namespace: ns-admin
 ---
 # # # # # # # # # # # # # # #
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: portainer
+  namespace: ns-admin
+  labels:
+    io.portainer.kubernetes.application.stack: portainer
+spec:
+  type: ClusterIP #NodePort
+  selector:
+    app: app-portainer
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9000
+      targetPort: 9000
+    - name: edge
+      protocol: TCP
+      port: 8000
+      targetPort: 8000
+---
+# # # # # # # # # # # # # # #
 # Deployment
 # Instant update: kubectl set image deployments/portainer portainer=portainer/portainer-k8s-beta:linux-amd64 -n ns-admin
 apiVersion: apps/v1
@@ -38,6 +61,8 @@ kind: Deployment
 metadata:
   name: portainer
   namespace: ns-admin
+  labels:
+    io.portainer.kubernetes.application.stack: portainer
 spec:
   selector:
     matchLabels:
@@ -54,6 +79,8 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 9000
+          protocol: TCP
+        - containerPort: 8000
           protocol: TCP
         volumeMounts:
         - name: admin-configs
@@ -72,24 +99,6 @@ spec:
           secretName: sec-azure-file
           shareName: shstk8skstjj001
           readOnly: false
----
-# # # # # # # # # # # # # # #
-# Service
-apiVersion: v1
-kind: Service
-metadata:
-  name: portainer
-  namespace: ns-admin
-spec:
-  type: ClusterIP #NodePort
-  selector:
-    app: app-portainer
-  ports:
-    - name: http
-      protocol: TCP
-      port: 9000
-      targetPort: 9000
-      # nodePort: 30777
 ---
 # # # # # # # # # # # # # # # # # # # # # # # # # #
 # portainer dashboard
