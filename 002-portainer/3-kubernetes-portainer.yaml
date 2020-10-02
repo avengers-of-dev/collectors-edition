@@ -3,7 +3,7 @@
 # Content: Portainer 4 kubernetes on AKS
 # Author: Jan Jambor, XWare GmbH
 # Author URI: https://xwr.ch
-# Date: 07.04.2020
+# Date: 02.10.2020
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -14,6 +14,10 @@ kind: ServiceAccount
 metadata:
   name: portainer-sa-clusteradmin
   namespace: ns-admin
+  labels:
+    app.kubernetes.io/name: portainer
+    app.kubernetes.io/instance: portainer
+    app.kubernetes.io/version: "2.0.0"
 ---
 # # # # # # # # # # # # # # #
 # ClusterRoleBinding
@@ -21,6 +25,10 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
   name: portainer-crb-clusteradmin
+  labels:
+    app.kubernetes.io/name: portainer
+    app.kubernetes.io/instance: portainer
+    app.kubernetes.io/version: "2.0.0"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -39,6 +47,9 @@ metadata:
   namespace: ns-admin
   labels:
     io.portainer.kubernetes.application.stack: portainer
+    app.kubernetes.io/name: portainer
+    app.kubernetes.io/instance: portainer
+    app.kubernetes.io/version: "2.0.0"
 spec:
   type: ClusterIP #NodePort
   selector:
@@ -63,7 +74,13 @@ metadata:
   namespace: ns-admin
   labels:
     io.portainer.kubernetes.application.stack: portainer
+    app.kubernetes.io/name: portainer
+    app.kubernetes.io/instance: portainer
+    app.kubernetes.io/version: "2.0.0"
 spec:
+  replicas: 1
+  strategy:
+    type: "Recreate"
   selector:
     matchLabels:
       app: app-portainer
@@ -71,11 +88,13 @@ spec:
     metadata:
       labels:
         app: app-portainer
+        app.kubernetes.io/name: portainer
+        app.kubernetes.io/instance: portainer
     spec:
       serviceAccountName: portainer-sa-clusteradmin
       containers:
       - name: portainer
-        image: portainer/portainer-k8s-beta:linux-amd64
+        image: portainer/portainer-ce:linux-amd64-2.0.0
         imagePullPolicy: Always
         ports:
         - containerPort: 9000
@@ -110,6 +129,11 @@ kind: IngressRoute
 metadata:
   name: ir-portainer
   namespace: ns-admin
+  labels:
+    io.portainer.kubernetes.application.stack: portainer
+    app.kubernetes.io/name: portainer
+    app.kubernetes.io/instance: portainer
+    app.kubernetes.io/version: "2.0.0"
 spec:
   entryPoints:
     - websecure
