@@ -1,6 +1,6 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
-# Content: terraform file for devops infrastructure
+# Content: terraform file for ypsomed devops infrastructure
 # Author: Jan Jambor
 # Author URI: https://xwr.ch
 # Date: 20.10.2020
@@ -237,6 +237,7 @@ resource "azurerm_network_security_group" "devopsserver" {
         protocol                   = "Tcp"
         source_address_prefix      = "${chomp(data.http.myip.body)}/32"
         source_port_range          = "*"
+
     }
 
     security_rule {
@@ -259,7 +260,7 @@ resource "azurerm_network_security_group" "devopsserver" {
         name                       = "HTTPS"
         priority                   = 1101
         protocol                   = "Tcp"
-        source_address_prefix      = "${chomp(data.http.myip.body)}/32"
+        source_address_prefix      = "*"
         source_port_range          = "*"
     }
 
@@ -271,7 +272,7 @@ resource "azurerm_network_security_group" "devopsserver" {
         name                       = "HTTP"
         priority                   = 1111
         protocol                   = "Tcp"
-        source_address_prefix      = "${chomp(data.http.myip.body)}/32"
+        source_address_prefix      = "*"
         source_port_range          = "*"
     }
 
