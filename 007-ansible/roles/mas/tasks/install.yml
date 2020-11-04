@@ -1,0 +1,4 @@
+---
+- name: installs {{ homebrew_formulae }} with Homebrew Cask
+  homebrew:
+    name: "{{ homebrew_formulae }}"

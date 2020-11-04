@@ -1,0 +1,7 @@
+---
+
+- name: update homebrew
+  shell: brew update
+
+- name: upgrade all apps
+  shell: brew upgrade

@@ -1,0 +1,9 @@
+---
+
+# this will install an app or skip the step if it is already there
+- name: installs app from appstore
+  command: "mas install {{ item }}"
+
+# when the first step was skipped because the app is already there, this one will update it
+- name: update app from appstore
+  command: "mas upgrade {{ item }}"

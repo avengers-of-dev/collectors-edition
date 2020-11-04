@@ -1,0 +1,15 @@
+---
+# App Ids for setup
+# See: https://github.com/mas-cli/mas
+# 1295203466 Microsoft Remote Desktop (10.4.1)
+# 462058435 Microsoft Excel (16.42)
+# 410309628 OCRKit (19.7)
+# 985367838 Microsoft Outlook (16.42)
+# 823766827 OneDrive (20.124.0621)
+# 784801555 Microsoft OneNote (16.42)
+# 462062816 Microsoft PowerPoint (16.42)
+# 462054704 Microsoft Word (16.42)
+# 508957583 Nozbe (3.13)
+# 425424353 The Unarchiver (4.2.2)
+
+homebrew_formulae_extentions: [1295203466,462058435,410309628,985367838,823766827,784801555,462062816,462054704,508957583,425424353]

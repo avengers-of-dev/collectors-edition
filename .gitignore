@@ -1,3 +1,4 @@
 .DS_Store
-003-terraform/01-k8s-cluster/.terraform/
 .talismanrc
+003-terraform/01-k8s-cluster/.terraform/
+007-ansible/venv

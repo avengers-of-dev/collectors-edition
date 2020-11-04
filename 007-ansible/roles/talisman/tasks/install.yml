@@ -1,0 +1,13 @@
+---
+# # # #
+# Setup seems not to work scripted
+# run once manual: curl --silent  https://raw.githubusercontent.com/thoughtworks/talisman/master/global_install_scripts/install.bash > /tmp/install_talisman.bash && /bin/bash /tmp/install_talisman.bash pre-push
+# help apriciated, send a PR / open an issue on GH
+- name: set talisman env
+  shell: TALISMAN_HOME=~/.talisman/bin
+
+- name: install talismann
+  shell: FILE=~/.talisman/bin; if [ -d "$FILE" ]; then echo "talisman already installed."; else curl --silent  https://raw.githubusercontent.com/thoughtworks/talisman/master/global_install_scripts/install.bash > /tmp/install_talisman.bash && /bin/bash /tmp/install_talisman.bash; fi
+
+- name: update talismann
+  shell: FILE=~/.talisman/bin; if [ -d "$FILE" ]; then curl --silent  https://raw.githubusercontent.com/thoughtworks/talisman/master/global_install_scripts/update_talisman.bash > /tmp/update_talisman.bash && /bin/bash /tmp/update_talisman.bash; else echo "talisman is not installed."; fi

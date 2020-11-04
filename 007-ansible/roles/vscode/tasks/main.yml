@@ -1,0 +1,7 @@
+---
+- include_tasks: install.yml
+
+- include_tasks: extensions.yml
+  loop: "{{ vscode_extentions }}"
+
+- include_tasks: settings.yml

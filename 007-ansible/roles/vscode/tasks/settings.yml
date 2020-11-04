@@ -1,0 +1,6 @@
+---
+- name: updates Visual Studio Code settings
+  copy:
+    src: "{{ vscode_settings }}"
+    dest: "{{ ansible_env.HOME }}/Library/Application Support/Code/User/settings.json"
+  when: vscode_settings is defined
