@@ -4,7 +4,7 @@
   tasks:
   - debug:
       msg: Check we are running in the directory of the script
-    failed_when: not ansible_env.PWD.endswith('/mac-ansible')
+    failed_when: not ansible_env.PWD.endswith('/007-ansible')
 
 - hosts: localhost
   connection: local
