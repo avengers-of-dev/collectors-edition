@@ -8,15 +8,15 @@
 
 - hosts: localhost
   connection: local
-  roles:
-  - homebrew
-  #- vscode
-  #vars_prompt:
-  #  - name: sudo_password
-  #    prompt: root password
   #vars:
   #  vscode_extentions:
   #    - VisualStudioExptTeam.vscodeintellicode
+  vars_prompt:
+  - name: ansible_become_pass
+    prompt: root password
+  roles:
+  - homebrew
+  #- vscode
   - iterm2
   - mas
   - firefox
@@ -26,3 +26,4 @@
   - postman
   - licecap
   - dotnet
+  - aks

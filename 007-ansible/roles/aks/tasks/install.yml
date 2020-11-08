@@ -1,0 +1,21 @@
+---
+- name: installs {{ homebrew_formulae }} with Homebrew 
+  homebrew:
+    name: "{{ homebrew_formulae }}"
+
+- name: installs kubectl
+  #sudo_password: "{{ sudo_password }}"
+  become: yes
+  become_method: sudo
+  become_user: root
+  shell: |
+    FILE=/usr/local/bin/kubectl;
+    if [ -d "$FILE" ]; then
+      echo "kubectl already installed.";
+    else
+      curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.19.0/bin/darwin/amd64/kubectl &&
+      chmod +x ./kubectl &&
+      sudo mv ./kubectl /usr/local/bin/kubectl;
+    fi
+  args:
+    warn: false # set warn=false to prevent warning for the chmod command
