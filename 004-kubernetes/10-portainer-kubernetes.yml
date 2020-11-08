@@ -5,67 +5,99 @@
 # Author URI: https://xwr.ch
 # Date: 28.02.2020
 #
+# kubectl port-forward --address 0.0.0.0 service/portainer 9000:9000 -n ns-admin
+# http://127.0.0.1:9000
+#
 # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # # # # # # # # # # # # # # #
 # ServiceAccount
+# Source: portainer/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: portainer-sa-clusteradmin
   namespace: ns-admin
+  labels:
+    app.kubernetes.io/name: portainer
+    app.kubernetes.io/instance: portainer
+    app.kubernetes.io/version: "2.0.0"
 ---
 # # # # # # # # # # # # # # #
 # ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
+# Source: portainer/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: portainer-crb-clusteradmin
+  name: portainer
+  namespace: ns-admin
+  labels:
+    app.kubernetes.io/name: portainer
+    app.kubernetes.io/instance: portainer
+    app.kubernetes.io/version: "2.0.0"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cluster-admin
 subjects:
 - kind: ServiceAccount
+  namespace: portainer
   name: portainer-sa-clusteradmin
-  namespace: ns-admin
 ---
 # # # # # # # # # # # # # # #
 # Deployment
 # Instant update: kubectl set image deployments/portainer portainer=portainer/portainer-k8s-beta:linux-amd64 -n ns-admin
+# Source: portainer/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: portainer
   namespace: ns-admin
+  labels:
+    io.portainer.kubernetes.application.stack: portainer
+    app.kubernetes.io/name: portainer
+    app.kubernetes.io/instance: portainer
+    app.kubernetes.io/version: "2.0.0"
 spec:
+  replicas: 1
+  strategy:
+    type: "Recreate"
   selector:
     matchLabels:
-      app: app-portainer
+      app.kubernetes.io/name: portainer
+      app.kubernetes.io/instance: portainer
   template:
     metadata:
       labels:
-        app: app-portainer
+        app.kubernetes.io/name: portainer
+        app.kubernetes.io/instance: portainer
     spec:
-      serviceAccountName: portainer-sa-clusteradmin
+      serviceAccountName: portainer-sa-clusteradmin  
       containers:
-      - name: portainer
-        image: portainer/portainer-k8s-beta:linux-amd64
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 9000
-          protocol: TCP
-        volumeMounts:
-        - name: admin-configs
-          mountPath: /data
-          subPath: portainer
-        resources:
-          # requests:
-          #   cpu: 100m
-          #   memory: 128Mi
-          limits:
-            cpu: 250m
-            memory: 256Mi
+        - name: portainer
+          image: "portainer/portainer-ce:latest"
+          imagePullPolicy: IfNotPresent          
+          volumeMounts:
+          - name: admin-configs
+            mountPath: /data
+            subPath: portainer
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+            - name: tcp-edge
+              containerPort: 8000
+              protocol: TCP              
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9000
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9000
+          resources:
+            {}
       volumes:
       - name: admin-configs
         azureFile:
@@ -75,21 +107,31 @@ spec:
 ---
 # # # # # # # # # # # # # # #
 # Service
+# Source: portainer/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
   name: portainer
   namespace: ns-admin
+  labels:
+    io.portainer.kubernetes.application.stack: portainer
+    app.kubernetes.io/name: portainer
+    app.kubernetes.io/instance: portainer
+    app.kubernetes.io/version: "2.0.0"
 spec:
-  type: ClusterIP #NodePort
-  selector:
-    app: app-portainer
+  type: ClusterIP
   ports:
-    - name: http
-      protocol: TCP
-      port: 9000
+    - port: 9000
       targetPort: 9000
-      # nodePort: 30777
+      protocol: TCP
+      name: http
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+      name: edge
+  selector:
+    app.kubernetes.io/name: portainer
+    app.kubernetes.io/instance: portainer
 ---
 # # # # # # # # # # # # # # # # # # # # # # # # # #
 # portainer dashboard
