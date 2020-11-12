@@ -15,17 +15,19 @@
   - name: ansible_become_pass
     prompt: root password
   roles:
-  - homebrew
-  #- vscode
-  - iterm2
-  - mas
-  - firefox
-  - talisman
-  - keepassxc
-  - forklift
-  - postman
-  - licecap
-  - dotnet
   - aks
-  - skype
   - calibre
+  - dotnet
+  - firefox
+  - forklift
+  - homebrew
+  - iterm2
+  - keepassxc
+  - licecap
+  - mas
+  - postman
+  - skype
+  - talisman
+  #- twitterrific
+  #- vscode
+  
