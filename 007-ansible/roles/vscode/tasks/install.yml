@@ -1,6 +1,0 @@
----
-- name: installs Visual Studio Code with Homebrew Cask
-  homebrew_cask:
-    #name: "visual-studio-code"
-    name: "{{ vscode_package }}"
-    # sudo_password: "{{ sudo_password }}"

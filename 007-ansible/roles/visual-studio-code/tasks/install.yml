@@ -1,0 +1,5 @@
+---
+- name: installs {{ appname }} with Homebrew Cask
+  homebrew_cask:
+    name: "{{ appname }}"
+
