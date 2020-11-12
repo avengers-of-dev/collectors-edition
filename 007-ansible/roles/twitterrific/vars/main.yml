@@ -1,0 +1,12 @@
+---
+# # # # # # # # # # # # # # #
+# App Name
+appname: twiterrific
+
+# # # # # # # # # # # # # # #
+# path to the folder, where the download can be placed and configs can be loaded
+swrepopath: /Users/jj/Qsync/sw-repo/{{ appname }}
+
+# # # # # # # # # # # # # # #
+# version to be installed (updated later in task)
+swversion: '5.4.4'

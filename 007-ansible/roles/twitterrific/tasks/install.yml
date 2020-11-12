@@ -1,0 +1,21 @@
+---
+# # # # # # # # # # # # # # #
+# check latest version from app store
+# - name: check Twiterrific latest version from app store
+#   shell: SWVERSION=$(mas info 1289378661 | grep Twitterrific); echo ${SWVERSION:29}
+#   register: swversion
+#   #ignore_errors: True
+
+# # # # # # # # # # # # # # #
+# Download latest version from Twiterrific (I'm a Kickstarter baker thus not via AppStore)
+- name: download {{ appname }}
+  get_url:
+    url: https://downloads.iconfactory.com/phoenix/phoenix.zip
+    dest: "{{ swrepopath }}/phoenix-{{ swversion }}.zip"
+
+# # # # # # # # # # # # # # #
+# unzip & copy to app folder
+- name: Unzip {{ appname }} & copy to app folder
+  unarchive:
+    src: "{{ swrepopath }}/phoenix-{{ swversion }}.zip"
+    dest: "/Applications/"
