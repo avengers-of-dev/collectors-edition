@@ -1,0 +1,8 @@
+---
+# # # # # # # # # # # # # # #
+# calibre 4 required due to plugin incompatiblity with calibre v5
+homebrew_formulae: calibre4
+
+# # # # # # # # # # # # # # #
+# path to the folder, where the download can be placed and configs can be loaded
+swrepopath: /Users/jj/Qsync/sw-repo/{{ homebrew_formulae }}

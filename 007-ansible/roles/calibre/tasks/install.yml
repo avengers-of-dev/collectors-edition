@@ -1,0 +1,18 @@
+---
+# # # # # # # # # # # # # # #
+# install app
+- name: "installs {{ homebrew_formulae }} with Homebrew Cask"
+  homebrew_cask:
+    name: "{{ homebrew_formulae }}"
+
+# # # # # # # # # # # # # # #
+# copy plugins / config >>> Copy {{ homebrew_formulae }} related files
+- name: Copy {{ homebrew_formulae }} plugin
+  copy:
+    src: "{{ swrepopath }}/DeDRM/"
+    dest: ~/Library/Preferences/calibre/plugins
+
+- name: Copy {{ homebrew_formulae }} config file
+  copy:
+    src: "{{ swrepopath }}/customize.py.json"
+    dest: ~/Library/Preferences/calibre/
