@@ -1,0 +1,8 @@
+---
+# # # # # # # # # # # # # # #
+# calibre 4 required due to plugin incompatiblity with calibre v5
+appname: tiptoy
+
+# # # # # # # # # # # # # # #
+# path to the folder, where the download can be placed and configs can be loaded
+swrepopath: /Users/jj/Qsync/sw-repo/{{ appname }}
