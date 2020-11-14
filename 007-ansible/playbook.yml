@@ -15,6 +15,7 @@
   - name: ansible_become_pass
     prompt: root password
   roles:
+  - maintenance # performe some maintenance tasks first
   - aks
   - calibre
   - dotnet
@@ -30,4 +31,4 @@
   - talisman
   - tiptoy
   - twitterrific
-  #- visual-studio-code
+  # - visual-studio-code # not working, see: https://github.com/ansible-collections/community.general/issues/1037
