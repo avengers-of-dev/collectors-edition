@@ -20,10 +20,23 @@ variable location {
     default = "West Europe"
 }
 
+variable resource_group_name {
+    default = "rg-k8s-kstjj-001"
+}
+
+variable storage_name {
+    # only letters and numbers!
+    default = "stk8skstjj001"
+}
+variable storage_share_name {
+    # only letters and numbers!
+    default = "shstk8skstjj001"
+}
+
 # k8s variables
 variable "kubernetes_version" {
   description = "Version of Kubernetes to install"
-  default     = "1.17.0"
+  default     = "1.19.0"
 }
 variable "agent_count" {
     default = 2
@@ -39,17 +52,6 @@ variable cluster_name {
 }
 variable keyvault_name {
     default = "kv-k8s-vault"
-}
-variable resource_group_name {
-    default = "rg-k8s-kstjj-001"
-}
-variable storage_name {
-    # only letters and numbers!
-    default = "stk8skstjj001"
-}
-variable storage_share_name {
-    # only letters and numbers!
-    default = "shstk8skstjj001"
 }
 
 # tags for all generated ressources

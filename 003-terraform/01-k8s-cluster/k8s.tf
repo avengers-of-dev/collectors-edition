@@ -1,6 +1,6 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
-# Content: terraform file for ypsomed devops infrastructure
+# Content: terraform file for managed k8s infrastructure
 # Author: Jan Jambor
 # Author URI: https://xwr.ch
 # Date: 20.10.2020
@@ -17,30 +17,30 @@ data "http" "myip" {
 # Basic ressources
 # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-resource "azurerm_resource_group" "devopsserver" {
+resource "azurerm_resource_group" "k8s" {
     name     = var.resource_group_name
     location = var.location
 }
 
-resource "azurerm_virtual_network" "devopsserver" {
-  name                = "devopsserver-network"
+resource "azurerm_virtual_network" "k8s" {
+  name                = "k8s-network"
   address_space       = ["10.0.0.0/16"]
   dns_servers         = ["10.0.2.7","10.0.2.6"]
-  location            = azurerm_resource_group.devopsserver.location
-  resource_group_name = azurerm_resource_group.devopsserver.name
+  location            = azurerm_resource_group.k8s.location
+  resource_group_name = azurerm_resource_group.k8s.name
 }
 
-resource "azurerm_subnet" "devopsserver" {
+resource "azurerm_subnet" "k8s" {
   name                 = "internal"
-  resource_group_name  = azurerm_resource_group.devopsserver.name
-  virtual_network_name = azurerm_virtual_network.devopsserver.name
+  resource_group_name  = azurerm_resource_group.k8s.name
+  virtual_network_name = azurerm_virtual_network.k8s.name
   address_prefix       = "10.0.2.0/24"
 }
 
-resource "azurerm_key_vault" "devopsserver" {
+resource "azurerm_key_vault" "k8s" {
     name                        = var.keyvault_name
-    location                    = azurerm_resource_group.devopsserver.location
-    resource_group_name         = azurerm_resource_group.devopsserver.name
+    location                    = azurerm_resource_group.k8s.location
+    resource_group_name         = azurerm_resource_group.k8s.name
     enabled_for_disk_encryption = true
     tenant_id                   = var.tenant_id
     soft_delete_enabled         = false # defaults to false
@@ -198,10 +198,10 @@ resource "azurerm_key_vault" "devopsserver" {
     }
 }
 
-resource "azurerm_storage_account" "devopsserver" {
+resource "azurerm_storage_account" "k8s" {
     name                      = var.storage_name
-    resource_group_name       = azurerm_resource_group.devopsserver.name
-    location                  = azurerm_resource_group.devopsserver.location
+    resource_group_name       = azurerm_resource_group.k8s.name
+    location                  = azurerm_resource_group.k8s.location
     account_kind              = "Storage" # defaults "StorageV2"
     account_tier              = "Standard"
     account_replication_type  = "LRS"
@@ -216,16 +216,16 @@ resource "azurerm_storage_account" "devopsserver" {
     }
 }
 
-resource "azurerm_storage_share" "devopsserver" {
+resource "azurerm_storage_share" "k8s" {
     name                 = var.storage_share_name
-    storage_account_name = azurerm_storage_account.devopsserver.name
+    storage_account_name = azurerm_storage_account.k8s.name
     quota                = 50
 }
 
-resource "azurerm_network_security_group" "devopsserver" {
-    name                = "devopsserverNetworkSecurityGroup"
-    location            = azurerm_resource_group.devopsserver.location
-    resource_group_name = azurerm_resource_group.devopsserver.name
+resource "azurerm_network_security_group" "k8s" {
+    name                = "k8sNetworkSecurityGroup"
+    location            = azurerm_resource_group.k8s.location
+    resource_group_name = azurerm_resource_group.k8s.name
 
     security_rule {
         access                     = "Allow"
@@ -238,18 +238,6 @@ resource "azurerm_network_security_group" "devopsserver" {
         source_address_prefix      = "${chomp(data.http.myip.body)}/32"
         source_port_range          = "*"
 
-    }
-
-    security_rule {
-        access                     = "Allow"
-        destination_address_prefix = "*"
-        destination_port_range     = "3389"
-        direction                  = "Inbound"
-        name                       = "RDP"
-        priority                   = 1001
-        protocol                   = "Tcp"
-        source_address_prefix      = "${chomp(data.http.myip.body)}/32"
-        source_port_range          = "*"
     }
 
     security_rule {
@@ -286,16 +274,39 @@ resource "azurerm_network_security_group" "devopsserver" {
 }
 
 # # # # # # # # # # # # # # # # # # # # # # # # # #
-# SQL servers on vms
-# VM for SQL DevOPS Server
-#
+# k8s cluster
 # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-resource "azurerm_public_ip" "devops-sql1" {
-    name                         = "devops-sql1"
-    location                     = azurerm_resource_group.devopsserver.location
-    resource_group_name          = azurerm_resource_group.devopsserver.name
-    allocation_method            = "Dynamic"
+resource "azurerm_kubernetes_cluster" "k8s" {
+    name                = var.cluster_name
+    location            = azurerm_resource_group.k8s.location
+    resource_group_name = azurerm_resource_group.k8s.name
+    dns_prefix          = var.dns_prefix
+    kubernetes_version  = var.kubernetes_version
+
+    linux_profile {
+        admin_username = "ubuntu"
+        ssh_key {
+            key_data = file(var.ssh_public_key)
+        }
+    }
+
+    default_node_pool {
+        name            = "agentpool"
+        node_count      = var.agent_count
+        vm_size         = "Standard_B4ms"
+    }
+
+    service_principal {
+        client_id     = var.client_id
+        client_secret = var.client_secret
+    }
+
+    addon_profile {
+        oms_agent {
+        enabled                    = false
+        }
+    }
 
     tags = {
         Environment = var.tag_environment
@@ -304,201 +315,4 @@ resource "azurerm_public_ip" "devops-sql1" {
         CostCenter = var.tag_costcenter
         DR = var.tag_dr
     }
-}
-resource "azurerm_network_interface" "devops-sql1-nic" {
-  name                = "devops-sql1-nic"
-  location            = azurerm_resource_group.devopsserver.location
-  resource_group_name = azurerm_resource_group.devopsserver.name
-
-  ip_configuration {
-    name                          = "internal"
-    subnet_id                     = azurerm_subnet.devopsserver.id
-    private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.devops-sql1.id
-  }
-
-  tags = {
-    Environment = var.tag_environment
-    Owner = var.tag_owner
-    ApplicationName = var.tag_application_name
-    CostCenter = var.tag_costcenter
-    DR = var.tag_dr
-  }
-}
-
-resource "azurerm_network_interface_security_group_association" "devops-sql1" {
-    network_interface_id      = azurerm_network_interface.devops-sql1-nic.id
-    network_security_group_id = azurerm_network_security_group.devopsserver.id
-}
-
-resource "azurerm_windows_virtual_machine" "devops-sql1" {
-  name                = "devops-sql1"
-  resource_group_name = azurerm_resource_group.devopsserver.name
-  location            = azurerm_resource_group.devopsserver.location
-  size                = "Standard_B4ms"
-  admin_username      = var.win_user
-  admin_password      = var.win_pass
-
-  network_interface_ids = [
-    azurerm_network_interface.devops-sql1-nic.id,
-  ]
-
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
-  }
-
-  source_image_reference {
-    publisher = "microsoftsqlserver"
-    offer     = "sql2019-ws2019"
-    sku       = "standard"
-    version   = "latest"
-  }
-
-  tags = {
-    Environment = var.tag_environment
-    Owner = var.tag_owner
-    ApplicationName = var.tag_application_name
-    CostCenter = var.tag_costcenter
-    DR = var.tag_dr
-  }
-}
-
-#
-# TODO
-# - login mode (sql & windows) is not set
-# - sql user is not set
-# terraform import azurerm_virtual_machine_extension.devops-sql1 /subscriptions/d9d8152f-7962-4dc6-a6eb-bcad103bda4a/resourceGroups/rg-devopsserver-kstjj-001/providers/Microsoft.Compute/virtualMachines/devops-sql1/extensions/devops-sql1
-resource "azurerm_virtual_machine_extension" "devops-sql1" {
-  name                 = "devops-sql1"
-  virtual_machine_id   = azurerm_windows_virtual_machine.devops-sql1.id
-  # publisher            = "Microsoft.Azure.Extensions"
-  # type                 = "CustomScript"
-  # type_handler_version = "2.0"
-  publisher            = "Microsoft.SqlServer.Management"
-  type                 = "SqlIaaSAgent"
-  type_handler_version = "1.2"
-
-  settings = <<SETTINGS
-    {
-        "SqlServerLicenseType": "PAYG",
-        
-        "AutoPatchingSettings": {
-          "PatchCategory": "WindowsMandatoryUpdates",
-          "Enable": true,
-          "DayOfWeek": "Sunday",
-          "MaintenanceWindowStartingHour": "2",
-          "MaintenanceWindowDuration": "60"
-        },
-        "KeyVaultCredentialSettings": {
-          "Enable": false,
-          "CredentialName": ""
-        },
-        "ServerConfigurationsManagementSettings": {
-          "SQLConnectivityUpdateSettings": {
-              "ConnectivityType": "Private",
-              "Port": "1433",
-              "SQLAuthUpdateUserName": "${var.win_user}",
-              "SQLAuthUpdatePassword": "${var.win_pass}"
-          },
-          "SQLWorkloadTypeUpdateSettings": {
-              "SQLWorkloadType": "GENERAL"
-          },
-          "AdditionalFeaturesServerConfigurations": {
-              "IsRServicesEnabled": "false"
-          } ,
-          "protectedSettings": {
-              "SQLAuthUpdateUserName": "${var.win_user}",
-              "SQLAuthUpdatePassword": "${var.win_pass}"
-            }
-          }
-      }
-SETTINGS
-
-  tags = {
-    Environment = var.tag_environment
-    Owner = var.tag_owner
-    ApplicationName = var.tag_application_name
-    CostCenter = var.tag_costcenter
-    DR = var.tag_dr
-  }
-}
-
-# # # # # # # # # # # # # # # # # # # # # # # # # #
-# Empty VM for APP DevOPS Server
-# 
-# # # # # # # # # # # # # # # # # # # # # # # # # #
-
-resource "azurerm_public_ip" "devops-app1" {
-    name                         = "devops-app1"
-    location                     = azurerm_resource_group.devopsserver.location
-    resource_group_name          = azurerm_resource_group.devopsserver.name
-    allocation_method            = "Static"
-
-    tags = {
-        Environment = var.tag_environment
-        Owner = var.tag_owner
-        ApplicationName = var.tag_application_name
-        CostCenter = var.tag_costcenter
-        DR = var.tag_dr
-    }
-}
-
-resource "azurerm_network_interface" "devops-app1-nic" {
-  name                = "devops-app1-nic"
-  location            = azurerm_resource_group.devopsserver.location
-  resource_group_name = azurerm_resource_group.devopsserver.name
-
-  ip_configuration {
-    name                          = "internal"
-    subnet_id                     = azurerm_subnet.devopsserver.id
-    private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.devops-app1.id
-  }
-
-  tags = {
-    Environment = var.tag_environment
-    Owner = var.tag_owner
-    ApplicationName = var.tag_application_name
-    CostCenter = var.tag_costcenter
-    DR = var.tag_dr
-  }
-}
-
-resource "azurerm_network_interface_security_group_association" "devops-app1" {
-    network_interface_id      = azurerm_network_interface.devops-app1-nic.id
-    network_security_group_id = azurerm_network_security_group.devopsserver.id
-}
-
-resource "azurerm_windows_virtual_machine" "devops-app1" {
-  name                = "devops-app1"
-  resource_group_name = azurerm_resource_group.devopsserver.name
-  location            = azurerm_resource_group.devopsserver.location
-  size                = "Standard_B4ms"
-  admin_username      = var.win_user
-  admin_password      = var.win_pass
-
-  network_interface_ids = [
-    azurerm_network_interface.devops-app1-nic.id,
-  ]
-
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
-  }
-
-  source_image_reference {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2019-Datacenter"
-    version   = "latest"
-  }
-
-  tags = {
-    Environment = var.tag_environment
-    Owner = var.tag_owner
-    ApplicationName = var.tag_application_name
-    CostCenter = var.tag_costcenter
-    DR = var.tag_dr
-  }
 }
