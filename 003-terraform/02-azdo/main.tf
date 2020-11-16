@@ -15,7 +15,7 @@ provider "http" {
 terraform {
     backend "azurerm" {
         storage_account_name = "stdefaultkstjj001"
-        container_name       = "tfstate"
+        container_name       = "tfstate-devopserver"
         resource_group_name  = "rg-default-kstjj-001"
         key                  = "prod.terraform.tfstate"
     }

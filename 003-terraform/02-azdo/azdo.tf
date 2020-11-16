@@ -198,6 +198,30 @@ resource "azurerm_key_vault" "devopsserver" {
     }
 }
 
+resource "azurerm_storage_account" "devopsserver" {
+    name                      = var.storage_name
+    resource_group_name       = azurerm_resource_group.devopsserver.name
+    location                  = azurerm_resource_group.devopsserver.location
+    account_kind              = "Storage" # defaults "StorageV2"
+    account_tier              = "Standard"
+    account_replication_type  = "LRS"
+    enable_https_traffic_only = "true"
+
+    tags = {
+        Environment = var.tag_environment
+        Owner = var.tag_owner
+        ApplicationName = var.tag_application_name
+        CostCenter = var.tag_costcenter
+        DR = var.tag_dr
+    }
+}
+
+resource "azurerm_storage_share" "devopsserver" {
+    name                 = var.storage_share_name
+    storage_account_name = azurerm_storage_account.devopsserver.name
+    quota                = 50
+}
+
 resource "azurerm_network_security_group" "devopsserver" {
     name                = "devopsserverNetworkSecurityGroup"
     location            = azurerm_resource_group.devopsserver.location

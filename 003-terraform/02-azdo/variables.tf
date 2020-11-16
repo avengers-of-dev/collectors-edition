@@ -28,6 +28,15 @@ variable keyvault_name {
     default = "kv-devopsserver-vault"
 }
 
+variable storage_name {
+    # only letters and numbers!
+    default = "stdevopsserverkstjj001"
+}
+variable storage_share_name {
+    # only letters and numbers!
+    default = "shstdevopsserverkstjj001"
+}
+
 # azdo related variables
 variable "win_user" {}
 variable "win_pass" {}
@@ -40,7 +49,7 @@ variable "tag_owner" {
   default     = "jan.jambor@xwr.ch"
 }
 variable "tag_application_name" {
-  default     = "azdo"
+  default     = "devopsserver"
 }
 variable "tag_costcenter" {
   default     = "jj"
