@@ -37,7 +37,7 @@ resource "azurerm_subnet" "k8s" {
   address_prefix       = "10.0.2.0/24"
 }
 
-resource "azurerm_key_vault" "k8s" {
+resource "azurerm_key_vault" "k82" {
     name                        = var.keyvault_name
     location                    = azurerm_resource_group.k8s.location
     resource_group_name         = azurerm_resource_group.k8s.name
@@ -229,20 +229,7 @@ resource "azurerm_network_security_group" "k8s" {
 
     security_rule {
         access                     = "Allow"
-        destination_address_prefix = "*"
-        destination_port_range     = "22"
-        direction                  = "Inbound"
-        name                       = "SSH"
-        priority                   = 1201
-        protocol                   = "Tcp"
-        source_address_prefix      = "${chomp(data.http.myip.body)}/32"
-        source_port_range          = "*"
-
-    }
-
-    security_rule {
-        access                     = "Allow"
-        destination_address_prefix = "*"
+        destination_address_prefix = "20.71.51.55"
         destination_port_range     = "443"
         direction                  = "Inbound"
         name                       = "HTTPS"
@@ -254,7 +241,7 @@ resource "azurerm_network_security_group" "k8s" {
 
     security_rule {
         access                     = "Allow"
-        destination_address_prefix = "*"
+        destination_address_prefix = "20.71.51.55"
         destination_port_range     = "80"
         direction                  = "Inbound"
         name                       = "HTTP"
@@ -303,9 +290,14 @@ resource "azurerm_kubernetes_cluster" "k8s" {
     }
 
     addon_profile {
-        oms_agent {
-        enabled                    = false
-        }
+      
+      kube_dashboard {
+        enabled       = false
+      }
+      
+      oms_agent {
+        enabled       = false
+      }
     }
 
     tags = {

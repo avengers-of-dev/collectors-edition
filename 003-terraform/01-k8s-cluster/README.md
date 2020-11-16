@@ -1,5 +1,7 @@
 # Introduction 
-Deplyoing infrstructure for Azure DevOps Server.
+Deplyoing a managed kubernetes cluster in azure (aks). Basically what you see below. The apps / services in the cluster will be described in a later example.
+
+![infrastructure overview](overview.png "infrastructure overview")
 
 # If you run this regulary ...
 (having this first because I need that myself a lot of times :-) )

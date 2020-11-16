@@ -17,6 +17,6 @@ terraform {
         storage_account_name = "stdefaultkstjj001"
         container_name       = "tfstate"
         resource_group_name  = "rg-default-kstjj-001"
-        key                  = "prod.terraform.tfstate"
+        key                  = "codelab.microsoft.tfstate"
     }
 }
