@@ -1,0 +1,12 @@
+---
+- name: installs {{ homebrew_formulae }} with Homebrew Cask
+  homebrew_cask:
+    name: "{{ homebrew_formulae }}"
+
+- name: installs oh my zsh
+  shell: FILE=~/.oh-my-zsh; if [ -d "$FILE" ]; then echo "Oh My Zsh already installed."; else sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"; fi
+
+- name: fix some oh my zsh permissions
+  shell: chmod 755 /usr/local/share/zsh && chmod 755 /usr/local/share/zsh/site-functions
+  args:
+    warn: false # set warn=false to prevent warning for the chmod command
