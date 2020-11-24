@@ -31,5 +31,5 @@
   - terraform
   - tiptoy
   - twitterrific
-  # - visual-studio-code # not working, see: https://github.com/ansible-collections/community.general/issues/1037
+  - visual-studio-code # workaround in place, see roles/requirements.yml and https://github.com/ansible-collections/community.general/issues/1037
   # required plugins: hashicorp.terraform
