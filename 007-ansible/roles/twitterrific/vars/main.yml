@@ -9,4 +9,4 @@ swrepopath: /Users/jj/Qsync/sw-repo/{{ appname }}
 
 # # # # # # # # # # # # # # #
 # version to be installed (updated later in task)
-swversion: '5.4.4'
+swversion: '5.4.5'

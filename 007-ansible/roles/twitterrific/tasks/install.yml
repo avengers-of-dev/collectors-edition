@@ -17,5 +17,7 @@
 # unzip & copy to app folder
 - name: Unzip {{ appname }} & copy to app folder
   unarchive:
+    remote_src : no
     src: "{{ swrepopath }}/phoenix-{{ swversion }}.zip"
-    dest: "/Applications/"
+    dest: "/Applications/Phoenix.app"
+    #creates: "/Applications/Phoenix.app"
