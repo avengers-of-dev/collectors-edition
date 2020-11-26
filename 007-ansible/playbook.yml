@@ -12,25 +12,25 @@
   - name: ansible_become_pass
     prompt: root password
   roles:
-  # - maintenance # performe some maintenance tasks first
-  # - aks
-  # - calibre
-  # - dotnet
-  # - firefox
-  # - forklift
-  # - gimp
-  # - homebrew
-  # - iterm2
-  # - keepassxc
-  # - licecap
-  # - mas
-  # - postman
-  # - qsync-client
-  # - skype
-  # - talisman
-  # - teamviewer
-  # - terraform
-  # - tiptoy
+  - maintenance # performe some maintenance tasks first
+  - aks
+  - calibre
+  - dotnet
+  - firefox
+  - forklift
+  - gimp
+  - homebrew
+  - iterm2
+  - keepassxc
+  - licecap
+  - mas
+  - postman
+  - qsync-client
+  - skype
+  - talisman
+  - teamviewer
+  - terraform
+  - tiptoy
   - twitterrific
-  # - visual-studio-code # workaround in place, see roles/requirements.yml and https://github.com/ansible-collections/community.general/issues/1037
+  - visual-studio-code # workaround in place, see roles/requirements.yml and https://github.com/ansible-collections/community.general/issues/1037
   # required plugins: hashicorp.terraform
