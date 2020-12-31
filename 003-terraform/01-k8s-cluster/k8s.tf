@@ -198,6 +198,10 @@ resource "azurerm_key_vault" "k82" {
     }
 }
 
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+# Storage & Storage Share - admin parts
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
 resource "azurerm_storage_account" "k8s" {
     name                      = var.storage_name
     resource_group_name       = azurerm_resource_group.k8s.name
@@ -221,6 +225,38 @@ resource "azurerm_storage_share" "k8s" {
     storage_account_name = azurerm_storage_account.k8s.name
     quota                = 50
 }
+
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+# Storage & Storage Share - database parts
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+resource "azurerm_storage_account" "k8s-database" {
+    name                      = "stk8sdatabasekstjj001"
+    resource_group_name       = azurerm_resource_group.k8s.name
+    location                  = azurerm_resource_group.k8s.location
+    account_kind              = "Storage" # defaults "StorageV2"
+    account_tier              = "Standard"
+    account_replication_type  = "LRS"
+    enable_https_traffic_only = "true"
+
+    tags = {
+        Environment = var.tag_environment
+        Owner = var.tag_owner
+        ApplicationName = var.tag_application_name
+        CostCenter = var.tag_costcenter
+        DR = var.tag_dr
+    }
+}
+
+resource "azurerm_storage_share" "k8s-database" {
+    name                 = "shstk8sdatabasekstjj001"
+    storage_account_name = azurerm_storage_account.k8s-database.name
+    quota                = 50
+}
+
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+# Network Security
+# # # # # # # # # # # # # # # # # # # # # # # # # #
 
 resource "azurerm_network_security_group" "k8s" {
     name                = "k8sNetworkSecurityGroup"

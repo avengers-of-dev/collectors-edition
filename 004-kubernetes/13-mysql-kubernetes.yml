@@ -1,0 +1,373 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# Content: mysql cluster on kubernetes
+# Author: Jan Jambor, XWare GmbH
+# Author URI: https://xwr.ch
+# Date: 31.12.2020
+#
+# Important: 
+# - this requires mysql 5.7 and needs bigger changes if a newer version or mariadb is wanted
+# - before running this, check:
+#   - Line 345: your public IP
+#   - Line 365: domain of your choice
+# 
+# Ressources: 
+# - based on: Running Highly Available WordPress with MySQL on Kubernetes https://rancher.com/running-highly-available-wordpress-mysql-kubernetes
+# - Kubernetes Volume Access Modes: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes
+# 
+# TODO
+# - should the password really be empty?
+#   - temp solution:
+#     - lock down root as much as possible (no connection from outside)
+#     - create a proper user with password for daily work
+# - move to mariadb: https://mariadb.com/kb/en/percona-xtrabackup-overview/
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# # # # # # # # # # # # # # #
+# Namespace
+# kubectl config set-context --current --namespace=ns-database
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-database
+---
+# # # # # # # # # # # # # # #
+# ConfigMap mysql
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql
+  namespace: ns-database
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: mysql
+    costcenter: jj
+    dr: essential
+data:
+  master.cnf: |
+    # Apply this config only on the master.
+    [mysqld]
+    log-bin
+    skip-host-cache
+    skip-name-resolve
+  slave.cnf: |
+    # Apply this config only on slaves.
+    [mysqld]
+    skip-host-cache
+    skip-name-resolve
+---
+# # # # # # # # # # # # # # #
+# StatefulSet mysql
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  namespace: ns-database
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: mysql
+    costcenter: jj
+    dr: essential
+    io.portainer.kubernetes.application.stack: mysql
+spec:
+  selector:
+    matchLabels:
+      applicationname: mysql
+  serviceName: mysql
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        environment: test
+        owner: jan.jambor-at-xwr.ch
+        applicationname: mysql
+        costcenter: jj
+        dr: essential
+    spec:
+      initContainers:
+      - name: init-mysql
+        image: mysql:5.7.32
+        command:
+        - bash
+        - "-c"
+        - |
+          set -ex
+          # Generate mysql server-id from pod ordinal index.
+          [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
+          ordinal=${BASH_REMATCH[1]}
+          echo [mysqld] > /mnt/conf.d/server-id.cnf
+          # Add an offset to avoid reserved server-id=0 value.
+          echo server-id=$((100 + $ordinal)) >> /mnt/conf.d/server-id.cnf
+          # Copy appropriate conf.d files from config-map to emptyDir.
+          if [[ $ordinal -eq 0 ]]; then
+            cp /mnt/config-map/master.cnf /mnt/conf.d/
+          else
+            cp /mnt/config-map/slave.cnf /mnt/conf.d/
+          fi
+        volumeMounts:
+        - name: conf
+          mountPath: /mnt/conf.d
+        - name: config-map
+          mountPath: /mnt/config-map
+      - name: clone-mysql
+        image: gcr.io/google-samples/xtrabackup:1.0
+        command:
+        - bash
+        - "-c"
+        - |
+          set -ex
+          # Skip the clone if data already exists.
+          [[ -d /var/lib/mysql/mysql ]] && exit 0
+          # Skip the clone on master (ordinal index 0).
+          [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
+          ordinal=${BASH_REMATCH[1]}
+          [[ $ordinal -eq 0 ]] && exit 0
+          # Clone data from previous peer.
+          ncat --recv-only mysql-$(($ordinal-1)).mysql 3307 | xbstream -x -C /var/lib/mysql
+          # Prepare the backup.
+          xtrabackup --prepare --target-dir=/var/lib/mysql
+        volumeMounts:
+        - name: mysql
+          mountPath: /var/lib/mysql
+          subPath: mysql
+        - name: conf
+          mountPath: /etc/mysql/conf.d
+      containers:
+      - name: mysql
+        image: mysql:5.7.32
+        env:
+        - name: MYSQL_ALLOW_EMPTY_PASSWORD
+          value: "1"
+        ports:
+        - name: mysql
+          containerPort: 3306
+        volumeMounts:
+        - name: mysql
+          mountPath: /var/lib/mysql
+          subPath: mysql
+        - name: conf
+          mountPath: /etc/mysql/conf.d
+        - name: config-map
+          mountPath: /mnt/config-map
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+        livenessProbe:
+          exec:
+            command: ["mysqladmin", "ping"]
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            # Check we can execute queries over TCP (skip-networking is off).
+            command: ["mysql", "-h", "127.0.0.1", "-e", "SELECT 1"]
+          initialDelaySeconds: 5
+          periodSeconds: 2
+          timeoutSeconds: 1
+      - name: xtrabackup
+        image: gcr.io/google-samples/xtrabackup:1.0
+        ports:
+        - name: xtrabackup
+          containerPort: 3307
+        command:
+        - bash
+        - "-c"
+        - |
+          set -ex
+          cd /var/lib/mysql
+
+          # Determine binlog position of cloned data, if any.
+          if [[ -f xtrabackup_slave_info ]]; then
+            # XtraBackup already generated a partial "CHANGE MASTER TO" query
+            # because we're cloning from an existing slave.
+            mv xtrabackup_slave_info change_master_to.sql.in
+            # Ignore xtrabackup_binlog_info in this case (it's useless).
+            rm -f xtrabackup_binlog_info
+          elif [[ -f xtrabackup_binlog_info ]]; then
+            # We're cloning directly from master. Parse binlog position.
+            [[ `cat xtrabackup_binlog_info` =~ ^(.*?)[[:space:]]+(.*?)$ ]] || exit 1
+            rm xtrabackup_binlog_info
+            echo "CHANGE MASTER TO MASTER_LOG_FILE='${BASH_REMATCH[1]}',\
+                  MASTER_LOG_POS=${BASH_REMATCH[2]}" > change_master_to.sql.in
+          fi
+
+          # Check if we need to complete a clone by starting replication.
+          if [[ -f change_master_to.sql.in ]]; then
+            echo "Waiting for mysqld to be ready (accepting connections)"
+            until mysql -h 127.0.0.1 -e "SELECT 1"; do sleep 1; done
+
+            echo "Initializing replication from clone position"
+            # In case of container restart, attempt this at-most-once.
+            mv change_master_to.sql.in change_master_to.sql.orig
+            mysql -h 127.0.0.1 <<EOF
+          $(<change_master_to.sql.orig),
+            MASTER_HOST='mysql-0.mysql',
+            MASTER_USER='root',
+            MASTER_PASSWORD='',
+            MASTER_CONNECT_RETRY=10;
+          START SLAVE;
+          EOF
+          fi
+
+          # Start a server to send backups when requested by peers.
+          exec ncat --listen --keep-open --send-only --max-conns=1 3307 -c \
+            "xtrabackup --backup --slave-info --stream=xbstream --host=127.0.0.1 --user=root"
+        volumeMounts:
+        - name: mysql
+          mountPath: /var/lib/mysql
+          subPath: mysql
+        - name: conf
+          mountPath: /etc/mysql/conf.d
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+      volumes:
+      - name: conf
+        emptyDir: {}
+      - name: config-map
+        configMap:
+          name: mysql
+  volumeClaimTemplates:
+  - metadata:
+      name: mysql
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi
+---
+# # # # # # # # # # # # # # #
+# Service mysql
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: ns-database
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: mysql
+    costcenter: jj
+    dr: essential
+    io.portainer.kubernetes.application.stack: mysql
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: mysql
+    port: 3306
+  selector:
+    applicationname: mysql
+---
+# # # # # # # # # # # # # # #
+# Deployment adminer
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: adminer
+  namespace: ns-database
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: adminer
+    costcenter: jj
+    dr: essential
+    io.portainer.kubernetes.application.stack: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      applicationname: adminer
+  template:
+    metadata:
+      labels:
+        applicationname: adminer
+    spec:
+      containers:
+        - name: adminer
+          image: adminer:4.7.6
+          env:
+          - name: PMA_HOST
+            value: "mysql"
+          - name: PMA_PORT
+            value: "3306"
+          ports:
+            - name: web
+              containerPort: 80
+            - name: websecure
+              containerPort: 443
+---
+# # # # # # # # # # # # # # #
+# Service adminer
+apiVersion: v1
+kind: Service
+metadata:
+  name: adminer
+  namespace: ns-database
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: adminer
+    costcenter: jj
+    dr: essential
+    io.portainer.kubernetes.application.stack: mysql
+spec:
+  type: ClusterIP #NodePort
+  selector:
+    applicationname: adminer
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+# # # # # # # # # # # # # # #
+# Middleware adminer
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: ipwl-onlylocalip
+  namespace: ns-database
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: adminer
+    costcenter: jj
+    dr: essential
+spec:
+  ipWhiteList:
+    sourceRange:
+      - 1.2.3.4/32 # your public IP to limit access to only that ip
+      - 127.0.0.1/32
+---
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+# Ingress Route adminer
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ir-traefik
+  namespace: ns-database
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: adminer
+    costcenter: jj
+    dr: essential
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`your.sub.domain.org`) # || Host(`1.2.3.4`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+    kind: Rule
+    services:
+    - name: adminer
+      namespace: ns-database
+      port: 8080
+  tls:
+    certResolver: myresolver
