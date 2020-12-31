@@ -12,6 +12,7 @@ one word also for logging: I have tested graylog because I really like it and it
 | # | app / tech  | description  |
 |---|---|---|
 | 00 | [basic-resources](https://github.com/avengers-of-dev/collectors-edition/blob/master/004-kubernetes/00-basic-resources.yml) | some basic resources you will need like access to file storage and key vault|
+| 01 | [busybox](https://github.com/avengers-of-dev/collectors-edition/blob/master/01-busybox.yml) | debian slim based container for analysis and stuff |
 | 10 | [portainer-kubernetes](https://github.com/avengers-of-dev/collectors-edition/blob/master/004-kubernetes/10-portainer-kubernetes.yml) | portainer as a graphical interface |
 | 11 | [traefic-kubernetes](https://github.com/avengers-of-dev/collectors-edition/blob/master/004-kubernetes/11-traefic-kubernetes.yml) | traefik reverse prox incl. let's encrypt |
 | 20 | [owntracks-kubernetes](https://github.com/avengers-of-dev/collectors-edition/blob/master/004-kubernetes/20-owntracks-mosquitto-kubernetes.yml) | test of running a own tracks backend |

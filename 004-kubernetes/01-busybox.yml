@@ -1,0 +1,73 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# Content: busy box for all sorts of stuff
+# Author: Jan Jambor, XWare GmbH
+# Author URI: https://xwr.ch
+# Date: 30.12.2020
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# # # # # # # # # # # # # # #
+# namespace > name: ns-admin
+
+# # # # # # # # # # # # # # #
+# secret for azure file storage
+# echo -n 'stk8sdatabasekstjj001' | base64
+# echo -n 'azurestorageaccountkey' | base64 (get this from your azure portal)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sec-azure-file-mariadb
+  namespace: ns-admin
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: busybox
+    costcenter: jj
+    dr: essential
+type: Opaque
+data:
+  azurestorageaccountname: azurestorageaccountname
+  azurestorageaccountkey: azurestorageaccountkey
+---
+# # # # # # # # # # # # # # #
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: busybox
+  namespace: ns-admin
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: busybox
+    costcenter: jj
+    dr: essential
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      applicationname: busybox
+  template:
+    metadata:
+      labels:
+        environment: test
+        owner: jan.jambor-at-xwr.ch
+        applicationname: busybox
+        costcenter: jj
+        dr: essential
+    spec:
+      containers:
+      - name: busybox
+        image: debian:10.3-slim
+        command: ["/bin/sh", "-ec", "sleep 1000"]
+        volumeMounts:
+        - name: data-storage
+          mountPath: /opt/mariadb
+          subPath: mariadb
+      volumes:
+      - name: data-storage
+        azureFile:
+          secretName: sec-azure-file-mariadb
+          shareName: shstk8sdatabasekstjj001
+          readOnly: false
