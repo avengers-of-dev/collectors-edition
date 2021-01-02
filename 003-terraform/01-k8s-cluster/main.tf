@@ -1,6 +1,4 @@
 provider "azurerm" {
-    #version = "~>1.5"
-    version = "=2.0.0"
     features {
         key_vault {
             recover_soft_deleted_key_vaults = false #defaults to true
@@ -8,9 +6,7 @@ provider "azurerm" {
     }
 }
 
-provider "http" {
-    version = "~> 1.2"
-}
+provider "http" {}
 
 terraform {
     backend "azurerm" {
@@ -18,5 +14,15 @@ terraform {
         container_name       = "tfstate"
         resource_group_name  = "rg-default-kstjj-001"
         key                  = "codelab.microsoft.tfstate"
+    }
+    
+    required_providers {
+        azurerm = {
+            version = "=2.0.0"
+        }
+
+        http = {
+            version = "~> 1.2"
+        }
     }
 }
