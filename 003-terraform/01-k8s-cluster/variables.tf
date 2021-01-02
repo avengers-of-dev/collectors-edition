@@ -36,7 +36,7 @@ variable storage_share_name {
 # k8s variables
 variable "kubernetes_version" {
   description = "Version of Kubernetes to install"
-  default     = "1.19.0"
+  default     = "1.19.3"
 }
 variable "agent_count" {
     default = 2
