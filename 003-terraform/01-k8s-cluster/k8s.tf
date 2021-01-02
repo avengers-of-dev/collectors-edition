@@ -37,8 +37,177 @@ resource "azurerm_subnet" "k8s" {
   address_prefix       = "10.0.2.0/24"
 }
 
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+# Keyvault for admin area (sorry for the typo :-)
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
 resource "azurerm_key_vault" "k82" {
     name                        = var.keyvault_name
+    location                    = azurerm_resource_group.k8s.location
+    resource_group_name         = azurerm_resource_group.k8s.name
+    enabled_for_disk_encryption = true
+    tenant_id                   = var.tenant_id
+    soft_delete_enabled         = false # defaults to false
+    purge_protection_enabled    = false # defaults to false
+    sku_name = "standard"
+
+    # service principal for cluster
+    access_policy {
+      tenant_id = var.tenant_id
+      object_id = var.client_id
+      certificate_permissions = [
+        #"backup",
+        "create",
+        "delete",
+        "deleteissuers",
+        "get",
+        "getissuers",
+        #"import",
+        "list",
+        "listissuers",
+        "managecontacts",
+        "manageissuers",
+        #"purge",
+        #"recover",
+        #"restore",
+        "setissuers",
+        "update"
+      ]
+      key_permissions = [
+        #"backup",
+        "create",
+        "decrypt",
+        "delete",
+        "encrypt",
+        "get",
+        #"import",
+        "list",
+        #"purge",
+        #"recover",
+        #"restore",
+        "sign",
+        "unwrapKey",
+        "update",
+        "verify",
+        "wrapKey"
+      ]
+      secret_permissions = [
+        #"backup",
+        "delete",
+        "get",
+        "list",
+        #"purge",
+        #"recover",
+        #"restore",
+        "set"
+      ]
+      storage_permissions = [
+        #"backup",
+        "delete",
+        "deletesas",
+        "get",
+        "getsas",
+        "list",
+        "listsas",
+        #"purge",
+        #"recover",
+        "regeneratekey",
+        #"restore",
+        "set",
+        "setsas",
+        "update"
+      ]
+    }
+
+    # permissions for admin user
+    access_policy {
+      tenant_id = var.tenant_id
+      object_id = var.admin_client_id
+      certificate_permissions = [
+        "backup",
+        "create",
+        "delete",
+        "deleteissuers",
+        "get",
+        "getissuers",
+        "import",
+        "list",
+        "listissuers",
+        "managecontacts",
+        "manageissuers",
+        "purge",
+        "recover",
+        "restore",
+        "setissuers",
+        "update"
+      ]
+      key_permissions = [
+        "backup",
+        "create",
+        "decrypt",
+        "delete",
+        "encrypt",
+        "get",
+        "import",
+        "list",
+        "purge",
+        "recover",
+        "restore",
+        "sign",
+        "unwrapKey",
+        "update",
+        "verify",
+        "wrapKey"
+      ]
+      secret_permissions = [
+        "backup",
+        "delete",
+        "get",
+        "list",
+        "purge",
+        "recover",
+        "restore",
+        "set"
+      ]
+      storage_permissions = [
+        "backup",
+        "delete",
+        "deletesas",
+        "get",
+        "getsas",
+        "list",
+        "listsas",
+        "purge",
+        "recover",
+        "regeneratekey",
+        "restore",
+        "set",
+        "setsas",
+        "update"
+      ]
+    }
+
+    network_acls {
+      default_action = "Deny"
+      bypass         = "AzureServices"
+      ip_rules       = ["${chomp(data.http.myip.body)}/32"]
+    }
+
+    tags = {
+        Environment = var.tag_environment
+        Owner = var.tag_owner
+        ApplicationName = var.tag_application_name
+        CostCenter = var.tag_costcenter
+        DR = var.tag_dr
+    }
+}
+
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+# Keyvault for apps area 
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+resource "azurerm_key_vault" "k8s-apps" {
+    name                        = "kv-k8s-apps-vault"
     location                    = azurerm_resource_group.k8s.location
     resource_group_name         = azurerm_resource_group.k8s.name
     enabled_for_disk_encryption = true
@@ -251,6 +420,34 @@ resource "azurerm_storage_account" "k8s-database" {
 resource "azurerm_storage_share" "k8s-database" {
     name                 = "shstk8sdatabasekstjj001"
     storage_account_name = azurerm_storage_account.k8s-database.name
+    quota                = 50
+}
+
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+# Storage & Storage Share - application parts
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+resource "azurerm_storage_account" "k8s-apps" {
+    name                      = "stk8sappskstjj001"
+    resource_group_name       = azurerm_resource_group.k8s.name
+    location                  = azurerm_resource_group.k8s.location
+    account_kind              = "Storage" # defaults "StorageV2"
+    account_tier              = "Standard"
+    account_replication_type  = "LRS"
+    enable_https_traffic_only = "true"
+
+    tags = {
+        Environment = var.tag_environment
+        Owner = var.tag_owner
+        ApplicationName = var.tag_application_name
+        CostCenter = var.tag_costcenter
+        DR = var.tag_dr
+    }
+}
+
+resource "azurerm_storage_share" "k8s-apps" {
+    name                 = "shstk8sappskstjj001"
+    storage_account_name = azurerm_storage_account.k8s-apps.name
     quota                = 50
 }
 
