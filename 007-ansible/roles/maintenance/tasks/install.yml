@@ -1,5 +1,11 @@
 ---
 # # # #
 # some maintenance tasks
+
+# pip
 - name: update pip
   shell: pip install --upgrade pip
+
+# ansible fix forced, see: https://github.com/ansible-collections/community.general/pull/1481
+- name: force a certain fix
+  shell: ansible-galaxy collection install --force git+https://github.com/jaanhio/community.general.git,update-deprecated-homebrew-cask-commands
