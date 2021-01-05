@@ -13,6 +13,7 @@
     prompt: root password
   roles:
   - maintenance # performe some maintenance tasks first
+  - adobe-acrobat-reader
   - aks
   - calibre
   - dotnet
