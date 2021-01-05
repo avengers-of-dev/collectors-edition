@@ -10,6 +10,8 @@
 # - before running this, check:
 #   - Line 345: your public IP
 #   - Line 365: domain of your choice
+# - restart statefulset; kubectl -n ns-database rollout restart statefulset mysql
+# - restart deployent; kubectl -n ns-database rollout restart deployment <name>
 # 
 # Ressources: 
 # - based on: Running Highly Available WordPress with MySQL on Kubernetes https://rancher.com/running-highly-available-wordpress-mysql-kubernetes
@@ -52,11 +54,15 @@ data:
     log-bin
     skip-host-cache
     skip-name-resolve
+    # Disable strict mode for deployment of some apps we need later
+    sql_mode="IGNORE_SPACE,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"
   slave.cnf: |
     # Apply this config only on slaves.
     [mysqld]
     skip-host-cache
     skip-name-resolve
+    # Disable strict mode for deployment of some apps we need later
+    sql_mode="IGNORE_SPACE,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"
 ---
 # # # # # # # # # # # # # # #
 # StatefulSet mysql

@@ -1,0 +1,217 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# Content: snipe-it on kubernetes
+# Author: Jan Jambor, XWare GmbH
+# Author URI: https://xwr.ch
+# Date: 31.12.2020
+#
+# Important: 
+# - this requires an existing mysql database
+# - this requires existing namespace and setup for apps see: 
+# - before running this, check:
+#   - Line 55: subscriptionId
+#   - Line 56: tenantId
+#   - Line 113: MYSQL_PASSWORD
+#   - Line 116 to 129: E-Mail Provider Settings
+#   - Line 136: add your app key
+#   - Line 138: domain of your choice
+#   - Line 204: domain of your choice
+# 
+# Ressources: 
+# - Snipe-IT Free open source IT asset management: https://snipeitapp.com/
+#
+# TODO / in Progress
+# - get all secrets from azure vault
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# # # # # # # # # # # # # # #
+# keyvault >> this is namespace scoped und thbus in the app area eg. 22-snipeit-kubernetes.yml
+# https://docs.microsoft.com/en-us/azure/key-vault/general/key-vault-integrate-kubernetes
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: kv-k8s-apps-vault
+  namespace: ns-apps
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: snipeit
+    costcenter: jj
+    dr: essential
+    io.portainer.kubernetes.application.stack: snipeit
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"                   # [REQUIRED] Set to "true" if using managed identities
+    useVMManagedIdentity: "false"             # [OPTIONAL] if not provided, will default to "false"
+    userAssignedIdentityID: ""                # [REQUIRED] If you're using a service principal, use the client id to specify which user-assigned managed identity to use. If you're using a user-assigned identity as the VM's managed identity, specify the identity's client id. If the value is empty, it defaults to use the system-assigned identity on the VM
+    keyvaultName: "kv-k8s-apps-vault"         # [REQUIRED] the name of the key vault
+    cloudName: "AzurePublicCloud"             # [OPTIONAL for Azure] if not provided, Azure environment will default to AzurePublicCloud
+    # $ az keyvault secret list --vault-name "kv-k8s-apps-vault"
+    objects:  |
+      array:
+        - |
+          objectName: k8s-apps-snipeit-mysql-user             # [REQUIRED] object name
+          objectType: secret                                  # [REQUIRED] object types: secret, key, or cert
+          objectVersion: ""                                   # [OPTIONAL] object versions, default to latest if empty
+        - |
+          objectName: k8s-apps-snipeit-mysql-password
+          objectType: secret
+          objectVersion: ""
+    resourceGroup: "rg-k8s-kstjj-001"                         # [REQUIRED] the resource group name of the key vault
+    subscriptionId: "subscriptionId"    # [REQUIRED] the subscription ID of the key vault
+    tenantId: "tenantId"          # [REQUIRED] the tenant ID of the key vault
+---
+# # # # # # # # # # # # # # #
+# Deployment
+# echo -n 'APP_KEY' | base64
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: snipeit
+  namespace: ns-apps
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: snipeit
+    costcenter: jj
+    dr: essential
+    io.portainer.kubernetes.application.stack: snipeit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      applicationname: snipeit
+  template:
+    metadata:
+      labels:
+        applicationname: snipeit
+    spec:
+      containers:
+        - name: snipeit
+          image: snipe/snipe-it:v5.0.11
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+          - name: apps-files
+            mountPath: /var/lib/snipeit
+            subPath: snipeit
+          - name: kv-k8s-apps-vault
+            mountPath: "/mnt/secrets-store"
+            readOnly: true
+          env:
+          # mysql Parameters
+          - name: MYSQL_PORT_3306_TCP_ADDR
+            value: "mysql.ns-database.svc.cluster.local"
+          - name: MYSQL_PORT_3306_TCP_PORT
+            value: "3306"
+          - name: MYSQL_DATABASE
+            value: "snipe"
+          - name: MYSQL_USER
+            value: "snipe"
+          # - name: MYSQL_USER
+          #   valueFrom:
+          #     secretKeyRef:
+          #       name: foosecret
+          #       key: username
+          - name: MYSQL_PASSWORD
+            value: "MYSQL_PASSWORD"
+          # Email Parameters
+          - name: MAIL_PORT_587_TCP_ADDR
+            value: "MAIL_PORT_587_TCP_ADDR"
+          - name: MAIL_PORT_587_TCP_PORT
+            value: "587"
+          - name: MAIL_ENV_FROM_ADDR
+            value: "MAIL_ENV_FROM_ADDR"
+          - name: MAIL_ENV_FROM_NAME
+            value: "snipe-it"
+          - name: MAIL_ENV_ENCRYPTION
+            value: "tls"
+          - name: MAIL_ENV_USERNAME
+            value: "MAIL_ENV_USERNAME"
+          - name: MAIL_ENV_PASSWORD
+            value: "MAIL_ENV_PASSWORD"
+          # Snipe-IT Settings
+          - name: APP_ENV
+            value: "production"
+          - name: APP_DEBUG
+            value: "false"
+          - name: APP_KEY
+            value: "APP_KEY"
+          - name: APP_URL
+            value: "APP_URL"
+          - name: APP_TIMEZONE
+            value: "Europe/Zurich"
+          - name: APP_LOCALE
+            value: "en"
+          - name: TRUSTED_PROXIES
+            value: "**"
+          ports:
+            - name: web
+              containerPort: 80
+      volumes:
+      - name: apps-files
+        azureFile:
+          secretName: sec-apps-files
+          shareName: shstk8sappskstjj001
+          readOnly: false
+      - name: kv-k8s-apps-vault
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: "kv-k8s-apps-vault"
+          nodePublishSecretRef:                     # Only required when using service principal mode
+            name: kv-k8s-apps-vault-store-creds     # Only required when using service principal mode
+---
+# # # # # # # # # # # # # # #
+# Service snipeit
+apiVersion: v1
+kind: Service
+metadata:
+  name: snipeit
+  namespace: ns-apps
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: snipeit
+    costcenter: jj
+    dr: essential
+    io.portainer.kubernetes.application.stack: mysql
+spec:
+  type: ClusterIP #NodePort
+  selector:
+    applicationname: snipeit
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+---
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+# Ingress Route snipeit
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ir-traefik
+  namespace: ns-apps
+  labels:
+    environment: test
+    owner: jan.jambor-at-xwr.ch
+    applicationname: snipeit
+    costcenter: jj
+    dr: essential
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`your.sub.domain.org`) # || Host(`1.2.3.4`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+    kind: Rule
+    services:
+    - name: snipeit
+      namespace: ns-apps
+      port: 80
+    middlewares:
+    - name: mw-headers
+  tls:
+    certResolver: myresolver
