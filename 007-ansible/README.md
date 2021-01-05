@@ -24,12 +24,4 @@ Getting Started
 Included apps & solutions
 =========================
 
-- upgrading homebrew & apps installed via homebrew
-- iterm2 incl. oh my zsh
-- mas to install apps from macOS AppStore
-- firefox
-- talisman
-- keepassxc
-- forklift
-- postman
-- licecap
+See `playbook.yml`.
