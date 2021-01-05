@@ -22,7 +22,12 @@ Getting Started
 
 Hints
 =====
-
 - this is basically updateing always to latest, not good for production as stuff breaks a lot
 - `pyenv rehash` helps when a brew update breaks pyenv
 - ansible plugins change a lot and often things break; if you need an old or new part of code use something like: `ansible-galaxy collection install --force git+https://github.com/jaanhio/community.general.git,update-deprecated-homebrew-cask-commands`
+
+
+Included apps & solutions
+=========================
+
+See `playbook.yml`.
