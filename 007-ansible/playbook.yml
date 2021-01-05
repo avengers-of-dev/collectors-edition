@@ -12,28 +12,29 @@
   - name: ansible_become_pass
     prompt: root password
   roles:
-  - maintenance # performe some maintenance tasks first
-  - aks
-  - calibre
-  - dotnet
-  - firefox
-  - forklift
-  - gimp
-  - homebrew
-  - inkscape
-  - iterm2
-  - keepassxc
-  - licecap
-  - mas
-  - postman
-  - qsync-client
-  - skype
-  - sox # quick tipp: find . -name '*.flac' -type f -exec bash -c 'echo "$1" && sox "$1" -C 320 "${1/flac/mp3}" && rm "$1"' -- {} \;
-  - talisman
-  - teamviewer
-  - terraform
-  - tiptoy
-  - tor-browser
-  - twitterrific
-  - visual-studio-code # workaround in place, see roles/requirements.yml and https://github.com/ansible-collections/community.general/issues/1037
-  # required plugins: hashicorp.terraform
+  # - maintenance # performe some maintenance tasks first
+  # - aks
+  # - calibre
+  # - dotnet
+  # - firefox
+  # - forklift
+  # - gimp
+  # - homebrew
+  # - inkscape
+  # - iterm2
+  # - keepassxc
+  # - licecap
+  # - mas
+  - microsoft-azure-storage-explorer
+  # - postman
+  # - qsync-client
+  # - skype
+  # - sox # quick tipp: find . -name '*.flac' -type f -exec bash -c 'echo "$1" && sox "$1" -C 320 "${1/flac/mp3}" && rm "$1"' -- {} \;
+  # - talisman
+  # - teamviewer
+  # - terraform
+  # - tiptoy
+  # - tor-browser
+  # - twitterrific
+  # - visual-studio-code # workaround in place, see roles/requirements.yml and https://github.com/ansible-collections/community.general/issues/1037
+  # # required plugins: hashicorp.terraform
