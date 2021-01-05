@@ -3,8 +3,10 @@
 - hosts: jjsmbp
   connection: local
   vars_prompt:
+  - name: ansible_become_user
+    prompt: admin user
   - name: ansible_become_pass
-    prompt: root password
+    prompt: admin password
   roles:
   - maintenance # performe some maintenance tasks first
   - aks
@@ -21,6 +23,8 @@
   - licecap
   #- logitec-capture # WIP, installer is not standard
   - mas
+  - microsoft-azure-storage-explorer
+  - microsoft-teams
   - postman
   - signal
   - qsync-client

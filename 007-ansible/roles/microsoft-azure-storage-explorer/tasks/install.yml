@@ -1,7 +1,4 @@
 ---
 - name: installs {{ homebrew_formulae }} with Homebrew Cask
-  become: yes
-  become_method: sudo
-  become_user: "{{ ansible_become_user }}"
   homebrew_cask:
     name: "{{ homebrew_formulae }}"
