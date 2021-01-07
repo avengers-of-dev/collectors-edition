@@ -1,0 +1,32 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# Content: terraform file for ypsomed devops infrastructure
+# Author: Jan Jambor
+# Author URI: https://xwr.ch
+# Date: 20.10.2020
+#
+# macOS tipps:
+# - check ssh with: $ sudo systemsetup -getremotelogin
+# - enable with settings -> sharing -> remote access
+# - add public key in ~/.ssh/authorized_keys
+#
+# TODO
+# - run full test via ssh (remove connection: local in playbook.yaml)
+# - add public ssh key to remote machine for auth
+# - link private key to container for auth
+# - add hosts file for every client you want to connect to
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+---
+clients:
+  hosts:
+    jjsmbp:
+      ansible_host: jjsmbp.
+      ansible_user: jj
+      ansible_ssh_private_key_file: "/Users/jj/.ssh/id_rsa"
+
+servers:
+  hosts:
+    2rocknas:
+      ansible_host: 192.168.100.7
+      ansible_user: admin
