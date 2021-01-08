@@ -3,3 +3,4 @@
 **/.terraform/**
 **/out.plan
 007-ansible/venv
+**/authorized_keys
