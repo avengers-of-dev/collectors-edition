@@ -17,3 +17,5 @@ A bunch of configs, examples and so on for different technologies and tools we h
 Many of the components are used in a kubernetes cluster designed as shown in the picture below.
 
 ![architecture overview](999-documentation/architecture.png)
+
+(test: ahead of master)
