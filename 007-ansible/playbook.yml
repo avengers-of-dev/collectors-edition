@@ -20,6 +20,7 @@
   - keepassxc
   - mas
   - postman
+  - signal
   - qsync-client
   - skype
   - sox # quick tipp: find . -name '*.flac' -type f -exec bash -c 'echo "$1" && sox "$1" -C 320 "${1/flac/mp3}" && rm "$1"' -- {} \;
