@@ -20,16 +20,9 @@ Getting Started
 5. `pip install ansible` (always the best way to install Ansible)
 6. Then `./playbook.yml`
 
+Hints
+=====
 
-Included apps & solutions
-=========================
-
-- upgrading homebrew & apps installed via homebrew
-- iterm2 incl. oh my zsh
-- mas to install apps from macOS AppStore
-- firefox
-- talisman
-- keepassxc
-- forklift
-- postman
-- licecap
+- this is basically updateing always to latest, not good for production as stuff breaks a lot
+- `pyenv rehash` helps when a brew update breaks pyenv
+- ansible plugins change a lot and often things break; if you need an old or new part of code use something like: `ansible-galaxy collection install --force git+https://github.com/jaanhio/community.general.git,update-deprecated-homebrew-cask-commands`
