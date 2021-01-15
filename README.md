@@ -19,3 +19,5 @@ Many of the components are used in a kubernetes cluster designed as shown in the
 ![architecture overview](999-documentation/architecture.png)
 
 (test: ahead of master)
+
+(test: for https://github.com/thoughtworks/talisman/issues/290#issuecomment-760637113)
