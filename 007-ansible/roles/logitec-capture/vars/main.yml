@@ -1,0 +1,12 @@
+---
+# # # # # # # # # # # # # # #
+# App Name
+appname: logitec-capture
+
+# # # # # # # # # # # # # # #
+# path to the folder, where the download can be placed and configs can be loaded
+swrepopath: /Users/jj/Qsync/sw-repo/{{ appname }}
+
+# # # # # # # # # # # # # # #
+# version to be installed (updated later in task)
+swversion: '2.04.8'

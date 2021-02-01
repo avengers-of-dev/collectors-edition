@@ -18,7 +18,8 @@
   - iterm2
   - kap
   - keepassxc
-  - mas
+  #- logitec-capture # WIP, installer is not standard
+  #- mas
   - postman
   - signal
   - qsync-client

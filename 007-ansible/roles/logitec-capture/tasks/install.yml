@@ -1,0 +1,31 @@
+---
+# # # # # # # # # # # # # # #
+# check latest version from app store
+# - name: check Twiterrific latest version from app store
+#   shell: SWVERSION=$(mas info 1289378661 | grep Twitterrific); echo ${SWVERSION:29}
+#   register: swversion
+#   #ignore_errors: True
+
+# # # # # # # # # # # # # # #
+# Download app if new
+- name: download {{ appname }}
+  get_url:
+    url: https://download01.logi.com/web/ftp/pub/techsupport/capture/Capture_{{ swversion }}.zip
+    dest: "{{ swrepopath }}/Capture_{{ swversion }}.zip"
+
+# # # # # # # # # # # # # # #
+# Unzip app if new
+- name: Unzip {{ appname }}
+  unarchive:
+    remote_src : no
+    src: "{{ swrepopath }}/Capture_{{ swversion }}.zip"
+    dest: "{{ swrepopath }}/Logi Capture Installer {{ swversion }}.app"
+    #creates: "/Applications/Phoenix.app"
+
+# # # # #
+# # Install app package
+# - name: install {{ appname }}
+#   become: yes
+#   become_method: sudo
+#   become_user: root
+#   shell: installer -store -pkg "{{ swrepopath }}/Logi Capture Installer {{ swversion }}.app" -target /
