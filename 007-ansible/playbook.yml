@@ -19,7 +19,7 @@
   - kap
   - keepassxc
   #- logitec-capture # WIP, installer is not standard
-  #- mas
+  - mas
   - postman
   - signal
   - qsync-client
