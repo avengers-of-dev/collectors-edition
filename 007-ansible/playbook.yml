@@ -31,5 +31,7 @@
   - tiptoy
   - tor-browser
   - twitterrific
-  - visual-studio-code # workaround in place, see roles/requirements.yml and https://github.com/ansible-collections/community.general/issues/1037
-  # required plugins: hashicorp.terraform
+  - visual-studio-code # workaround in place, see roles/requirements.yml and https://github.com/ansible-collections/community.general/issues/1037 # required plugins: hashicorp.terraform and more ...
+  
+  # move log to a file with date and time to keep it for future reference
+  - post-processing

@@ -1,0 +1,6 @@
+---
+- name: move the log file for this run
+  become: yes
+  become_method: sudo
+  become_user: root
+  shell: /bin/bash -l -c "mv log/ansible.log log/ansible-{{ lookup('pipe', 'date +%Y%m%d%H%M%S') }}.log"
