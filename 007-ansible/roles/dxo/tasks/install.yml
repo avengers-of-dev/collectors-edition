@@ -1,0 +1,22 @@
+---
+# # # # 
+# become: yes
+# become_method: sudo
+# become_user: root
+#
+# copy:
+#   src: "{{ swrepopath }}/{{ appname }}{{ swversion }}.app"
+#   dest: "/Applications/"
+#
+# $ sudo installer -pkg DarwinPorts-1.2.pkg -target "/"
+#
+- name: "install {{ appname }}: attach dmg"
+  shell: hdiutil attach {{ swrepopath }}/{{ appname }}{{ swversion }}.dmg
+
+- name: "install {{ appname }}: copy app"
+  copy:
+    src: "/Volumes/DxO PhotoLab/DXOPhotoLab4.app"
+    dest: "/Applications/"
+
+- name: "install {{ appname }}: detach dmg"
+  shell: hdiutil detach "/Volumes/DXO PhotoLab"

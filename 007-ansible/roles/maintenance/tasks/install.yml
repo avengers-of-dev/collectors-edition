@@ -1,5 +1,10 @@
 ---
 # # # #
 # some maintenance tasks
+# removing a role: $ ansible-galaxy remove role_name
+#
 - name: update pip
   shell: pip install --upgrade pip
+
+- name: install ansible-galaxy requirements
+  shell: ansible-galaxy collection install -r roles/requirements.yml

@@ -1,0 +1,12 @@
+---
+# # # # # # # # # # # # # # #
+# 
+appname: 'DXO_PhotoLab'
+
+# # # # # # # # # # # # # # #
+# version to be installed
+swversion: '4'
+
+# # # # # # # # # # # # # # #
+# path to the folder, where the download can be placed and configs can be loaded
+swrepopath: /Users/jj/Qsync/sw-repo/{{ appname }}
