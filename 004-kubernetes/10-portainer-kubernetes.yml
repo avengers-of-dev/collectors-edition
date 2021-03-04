@@ -21,7 +21,7 @@ metadata:
   labels:
     app.kubernetes.io/name: portainer
     app.kubernetes.io/instance: portainer
-    app.kubernetes.io/version: "2.0.0"
+    app.kubernetes.io/version: "2.1.1"
 ---
 # # # # # # # # # # # # # # #
 # ClusterRoleBinding
@@ -34,7 +34,7 @@ metadata:
   labels:
     app.kubernetes.io/name: portainer
     app.kubernetes.io/instance: portainer
-    app.kubernetes.io/version: "2.0.0"
+    app.kubernetes.io/version: "2.1.1"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -57,7 +57,7 @@ metadata:
     io.portainer.kubernetes.application.stack: portainer
     app.kubernetes.io/name: portainer
     app.kubernetes.io/instance: portainer
-    app.kubernetes.io/version: "2.0.0"
+    app.kubernetes.io/version: "2.1.1"
 spec:
   replicas: 1
   strategy:
@@ -75,7 +75,7 @@ spec:
       serviceAccountName: portainer-sa-clusteradmin  
       containers:
         - name: portainer
-          image: "portainer/portainer-ce:latest"
+          image: portainer/portainer-ce:2.1.1
           imagePullPolicy: IfNotPresent          
           volumeMounts:
           - name: admin-configs
@@ -117,7 +117,7 @@ metadata:
     io.portainer.kubernetes.application.stack: portainer
     app.kubernetes.io/name: portainer
     app.kubernetes.io/instance: portainer
-    app.kubernetes.io/version: "2.0.0"
+    app.kubernetes.io/version: "2.1.1"
 spec:
   type: ClusterIP
   ports:
