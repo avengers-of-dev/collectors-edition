@@ -2,3 +2,5 @@
 - name: installs {{ homebrew_formulae }} with Homebrew Cask
   homebrew_cask:
     name: "{{ homebrew_formulae }}"
+    state: present
+    sudo_password: "{{ ansible_become_pass }}"
