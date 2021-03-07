@@ -1,0 +1,13 @@
+---
+
+- name: installs {{ homebrew_formulae }} with Homebrew
+  homebrew:
+    name: "{{ homebrew_formulae }}"
+
+- name: git config
+  # check result: $ git config --global -l
+  shell: | 
+    alias git='/usr/local/bin/git'
+    git config --global core.editor "nano"
+    git config --global user.name "JJ"
+    git config --global user.email "jan@jambor.pro"
