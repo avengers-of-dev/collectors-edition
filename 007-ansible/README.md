@@ -29,5 +29,4 @@ Hints
 
 Included apps & solutions
 =========================
-
 See `playbook.yml`.
