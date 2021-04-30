@@ -6,6 +6,5 @@
 # 
 - name: install {{ appname }}
   become: yes
-  become_method: sudo
-  become_user: root
+  become_method: su
   shell: installer -store -pkg "{{ swrepopath }}/tiptoi_Manager_Installer.pkg" -target /

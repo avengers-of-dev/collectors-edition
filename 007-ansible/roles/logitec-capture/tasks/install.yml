@@ -26,6 +26,5 @@
 # # Install app package
 # - name: install {{ appname }}
 #   become: yes
-#   become_method: sudo
-#   become_user: root
+#   become_method: su
 #   shell: installer -store -pkg "{{ swrepopath }}/Logi Capture Installer {{ swversion }}.app" -target /
