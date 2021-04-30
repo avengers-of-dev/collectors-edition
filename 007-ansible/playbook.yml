@@ -33,7 +33,7 @@
   - talisman
   - teamviewer
   - terraform
-  - tiptoy
+  #- tiptoy
   - tor-browser
   - twitterrific
   - visual-studio-code # workaround in place, see roles/requirements.yml and https://github.com/ansible-collections/community.general/issues/1037 # required plugins: hashicorp.terraform and more ...
