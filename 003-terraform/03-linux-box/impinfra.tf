@@ -5,6 +5,9 @@
 # Author URI: https://xwr.ch
 # Date: 19.01.2021
 #
+# TODO
+# - add users
+#
 # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # get the local ip address for ip_rules
@@ -74,7 +77,7 @@ resource "azurerm_network_security_group" "impinfra" {
         name                       = "SSH"
         priority                   = 1201
         protocol                   = "TCP"
-        source_address_prefix      = "${chomp(data.http.myip.body)}/32"
+        source_address_prefixes    = ["${chomp(data.http.myip.body)}/32", "More IP Addresses"]
         source_port_range          = "*"
 
     }
@@ -87,7 +90,7 @@ resource "azurerm_network_security_group" "impinfra" {
         name                       = "RIB"
         priority                   = 1101
         protocol                   = "TCP"
-        source_address_prefix      = "${chomp(data.http.myip.body)}/32"
+        source_address_prefixes    = ["${chomp(data.http.myip.body)}/32", "More IP Addresses"]
         source_port_range          = "*"
     }
 

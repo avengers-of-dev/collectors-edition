@@ -1,6 +1,7 @@
 .DS_Store
 .talismanrc
 **/.terraform/**
+**/.terraform.lock.hcl
 **/out.plan
 007-ansible/venv
 **/authorized_keys
