@@ -41,3 +41,8 @@
 
   # move log to a file with date and time to keep it for future reference
   - post-processing
+
+## Apps to add:
+# brew install --cask tunnelblick
+# brew install --cask sketch
+
