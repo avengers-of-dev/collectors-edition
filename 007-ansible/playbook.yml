@@ -44,5 +44,7 @@
 
 ## Apps to add:
 # brew install --cask tunnelblick
-# brew install --cask sketch
+
+## Apps to check (really required?)
+# brew install --cask keyboard-maestro
 
