@@ -47,4 +47,6 @@
 
 ## Apps to check (really required?)
 # brew install --cask keyboard-maestro
+# brew install krew # add to nano ~/.zshrc >> export PATH="${PATH}:${HOME}/.krew/bin"
+# brew install kubernetes-cli # >> remove the one from aks
 
