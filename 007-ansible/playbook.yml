@@ -21,7 +21,6 @@
   - iterm2
   - keepassxc
   - licecap
-  #- logitec-capture # WIP, installer is not standard
   - mas
   - microsoft-azure-storage-explorer
   - microsoft-teams
@@ -46,8 +45,9 @@
 # brew install --cask tunnelblick
 
 ## Apps to check (really required?)
+# brew install --cask adobe-acrobat-reader
 # brew install --cask keyboard-maestro
 # brew install krew # add to nano ~/.zshrc >> export PATH="${PATH}:${HOME}/.krew/bin"
 # brew install kubernetes-cli # >> remove the one from aks
 # brew install detox # clearing filenames 
-
+# DxO Setup
