@@ -1,7 +1,11 @@
 ---
 
 - name: update homebrew
+  become: yes
+  become_method: su
   shell: brew update
 
 - name: upgrade all apps
+  become: yes
+  become_method: su
   shell: brew upgrade

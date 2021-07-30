@@ -9,6 +9,7 @@
     prompt: admin password
   roles:
   - maintenance # performe some maintenance tasks first
+  - homebrew # updates also existing apps
   - aks
   - calibre
   - dotnet
@@ -16,7 +17,6 @@
   - forklift
   - gimp
   - git
-  - homebrew
   - inkscape
   - iterm2
   - keepassxc
@@ -51,4 +51,6 @@
 # brew install kubernetes-cli # >> remove the one from aks
 # brew install detox # clearing filenames 
 # brew install --cask plex
+# brew install --cask docker
+# brew install jq
 # DxO Setup
