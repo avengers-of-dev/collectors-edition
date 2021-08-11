@@ -51,6 +51,5 @@
 # brew install kubernetes-cli # >> remove the one from aks
 # brew install detox # clearing filenames 
 # brew install --cask plex
-# brew install --cask docker
 # brew install jq
 # DxO Setup
